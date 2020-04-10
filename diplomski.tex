@@ -1,0 +1,49 @@
+\documentclass[utf8, diplomski, english]{fer}
+\usepackage{booktabs}
+
+\begin{document}
+
+% TODO: Navedite broj rada.
+\thesisnumber{000}
+
+% TODO: Navedite naslov rada.
+\title{Application of Genetic Programming for Real-Time Task Scheduling}
+
+% TODO: Navedite svoje ime i prezime.
+\author{Karla Salamun}
+
+\maketitle
+
+% Ispis stranice s napomenom o umetanju izvornika rada. Uklonite naredbu \izvornik ako želite izbaciti tu stranicu.
+\izvornik
+
+% Dodavanje zahvale ili prazne stranice. Ako ne želite dodati zahvalu, naredbu ostavite radi prazne stranice.
+\zahvala{}
+
+\tableofcontents
+
+\include{chapters/introduction}
+\include{chapters/genprog}
+\include{chapters/fm}
+\include{chapters/implementation}
+\include{chapters/results}
+\include{chapters/conclusion}
+
+\bibliography{literatura}
+\bibliographystyle{plainnat}
+
+\begin{abstract}
+Abstract.
+
+\keywords{Keywords.}
+\end{abstract}
+
+% TODO: Navedite naslov na hrvatskom jeziku.
+\hrtitle{Primjena genetskog programiranja za raspoređivanje zadataka u sustavima za rad u stvarnom vremenu}
+\begin{sazetak}
+Sažetak na hrvatskom jeziku.
+
+\kljucnerijeci{Ključne riječi, odvojene zarezima.}
+\end{sazetak}
+
+\end{document}

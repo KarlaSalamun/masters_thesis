@@ -1,0 +1,9 @@
+*
+!*.gitignore
+!*.tex
+!*.cls
+!*.bib
+!*.bst
+!chapters/
+!images/
+!Makefile
