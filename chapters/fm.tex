@@ -1,8 +1,92 @@
 \chapter{Formal Methods of Scheduling Overloaded Real-Time Systems}
+%%%% TODO ovdje pisati o podjeli zadataka na firm, soft, hard???
+
 \section{Transient Overload}
 \subsection{Aperiodic Overloads}
 \subsection{Task Overruns}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Permanent Overload}
+
+Permanent overload in periodic task systems occurs when the total utilization factor of the periodic task set is greater than one \cite{buttazzo2011hard}. 
+This condition occurs either because of wrong estimation of the task execution time, unexpected activation of new periodic tasks, or the increase of activation rate of current tasks.
+Methods for reducing permanent overload are the following:
+\begin{itemize}
+	\item{job skipping,}
+	\item{period adaptation,}
+	\item{service adaptation.}
+\end{itemize}
+
 \subsection{Job Skipping}
+Job skipping method reduces system load by skipping some jobs in the task set. Jobs to be skipped are assigned in a way that the remainig jobs can be scheduled within their deadlines.
+This method is applicable for firm tasks, as they allow a certain miss ratio. 
+The quantified ratio of tasks that may not be executed is directly related to Quality of Service 
+(QoS) metric. 
+The algorithms presented in this section address the task miss ratio as a QoS concern, with the purpose of maximizing the QoS of periodic tasks.
+
+A task model suitable for job skipping method is known in literature as the firm periodic model.
+It was first described by Koren and Shasha \cite{koren1995skip}.
+According to this model, every task is described as following:
+\begin{align*}
+\tau_i(C_i, T_i, D_i, S_i)
+\end{align*}
+where $C_i$ is the worst-case computation time, $T_i$ is the task period, $D_i$ is the relative deadline (assumed equal to the period). $S_i$ is the skip parameter and it marks the minimum distance between two consecutive skips, \(2 \leq S_i \leq \infty\).
+
+An example of schedule with task skipping is given in figure \ref{skipover}. 
+Since the utilization factor equals 
+\begin{equation*}
+U_p = \sum_{i=1}^{n} \frac{C_i}{T_i} = 1.17,
+\end{equation*}
+the system is permanently overloaded. 
+However, if task \(\tau_2\) is skipped every three instances, the overload is resolved.
+\\
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\textwidth]{images/skipover.pdf}
+    \caption{An example of resolving permanent overload by skipping method.}
+    \label{skipover}
+\end{figure}
+
+Corresponding to the stated task model, every job of a periodic task can be red or blue.
+A red job must be completed within its deadline, whereas a blue job can be aborted at any time 
+\cite{buttazzo2011hard}. 
+With respect to the skip parameter $S_i$, each scheduling algorithm needs to fulfill two conditions:
+\begin{itemize}
+	\item if a blue job is skipped, then the next \(S_i - 1\) jobs must be red,
+	\item if a blue job completes successfully, the next job is also blue.
+\end{itemize}
+The authors proved that the problem of determining whether a set of periodic skippable tasks is schedulable is NP-hard \cite{koren1995skip}.
+
+% Although the algorithms are not optimal, they become optimal under a certain condition, called the 
+% \textit{deeply-red} condition. 
+% The \textit{deeply-red} condition is the worst case condition for periodic task sets:
+% all tasks are synchronously activated and the first \(S_i - 1\) instances of every task $\tau_i$ are red. 
+
+For the given set of skippable periodic tasks \( \Gamma = {\tau_i(T_i,C_i,S_i)} \), the necessary schedulability condition is the following:
+\begin{equation}
+\sum_{i=1}^{n} \frac{C_i(S_i-1)}{T_i S_i} \leq 1.
+\end{equation}
+
+A sufficient condition for guaranteeing schedulability of a set of skippable tasks can be stated 
+using the equivalent utilization factor, which is formally described in the following definition:
+\newtheorem{mydef}{Definition}
+\begin{mydef}
+Given a set \( \Gamma = {\tau_i(T_i,C_i,S_i)} \) of n skippable periodic tasks, the equivalent utilization factor is defined as:
+\begin{equation*}
+U_p^\ast = \max_{L \geq 0} \frac{\sum_{i}D(i, [0,L])}{L}
+\end{equation*}
+where
+\begin{equation*}
+D(i, [0,L]) = \left\lfloor \frac{L}{T_i} - \frac{L}{T_i \cdot S_i}\right\rfloor \cdot C_i.
+\end{equation*}
+\end{mydef}
+
+According to the sufficient schedulability condition, a set of skippable periodic tasks is schedulable if \( U_p^\ast \leq 1 \).
+
+\subsubsection{RTO Algorithm}
+\subsubsection{BWP Algorithm}
+\subsubsection{RLP Algorithm}
+
+
 \subsection{Period Adaptation}
 \subsection{Service Adaptation}

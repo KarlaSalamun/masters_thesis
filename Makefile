@@ -3,7 +3,7 @@ INCLUDE = $(wildcard chapters/*.tex)
 IMAGES = $(wildcard images/*.pdf)
 CITATIONS = literatura.bib
 
-all: $(PROJECT).pdf prezentacija.pdf
+all: $(PROJECT).pdf 
 
 $(PROJECT).pdf: $(PROJECT).tex $(INCLUDE) $(IMAGES) $(CITATIONS)
 	latexmk -pdf -pdflatex="pdflatex -halt-on-error"  $(PROJECT)
