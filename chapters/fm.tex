@@ -1,9 +1,76 @@
 \chapter{Formal Methods of Scheduling Overloaded Real-Time Systems}
 %%%% TODO ovdje pisati o podjeli zadataka na firm, soft, hard???
+Overload condition in real-time task scheduling is a critical situation in which the computational demand requested by the task set exceeds the processor capacity, and hence not all tasks can complete within their deadlines 
+\cite{lee2007handbook}.
+Such conditions may occur due to bad system design, simultaneous arrival of "unexpected" events, malfunctioning of input devices, operating system exceptions and so on.
+
+In standard queueing theory, system load $\rho$ represents the expected number of job arrivals per mean service time. 
+In a system consisting of preemptable periodic tasks with implicit deadlines, system load is equivalent to the processor utilization factor:
+\begin{equation*}
+\rho = U = \sum_{i=1}^{n}\frac{C_i}{T_i},
+\end{equation*}
+where $C_i$ is the computation time and $T_i$ is the period of task $\tau_i$.
+If load value is greater than one, the task set is non-schedulable because the total computation time requested by the periodic tasks exceeds the available processor time.
+
+When an overload condition occurs, it is inevitable that one or more task miss their deadlines. 
+Therefore, it is preferable that those tasks are of less importance than the ones that can complete successfully. 
+
+Task importance is specified through a value parameter, associated with each task.
+Depending on particular application, task value may be directly related to task parameters such as computation time or deadline value, but can also be set to an arbitary value.
+Task values in real-time systems often depend on the time at which the task is executed, so the task importance can be described by an utility function 
+\cite{buttazzo2011hard}.
+Utility functions differ for single task types, as shown in figure \ref{utiliy_fcn}.
+%%% TODO ovdje ide slika \caption{Utility functions for four different types of tasks}
+Methods of handling overload conditions presented in this work consider firm real-time tasks that give an insignificant contribution if completed after their deadline.
 
 \section{Transient Overload}
+Transient overload occurs for a limited duration, in a system with the average load less or equal to one.
+Due to aperiodic requests or unexpected behaviour of some tasks, the maximum load can exceed one and cause a transient overload.
+
 \subsection{Aperiodic Overloads}
+This type of overload occurs in systems consisting of aperiodic jobs, due to excessive event arrivals. 
+This type of overload can lead to a phenomenon called the \textit{Domino Effect} in which the arrival of a new task can cause all of the previous tasks to miss their deadlines. 
+Figure \ref{aperiodic} depicts such situation on an EDF-scheduled task set. 
+The execution of task $\tau_0$ leads to deadline miss of all the previous tasks.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.70\textwidth]{images/overload_aper.pdf}
+    \caption{An example of transient overload due to aperiodic job arrival under EDF-scheduled system.}
+    \label{aperiodic}
+\end{figure}
+
+As shown in \cite{buttazzo2011hard}, it's impossible to create an optimal on-line algorithm that handles overload situations.
+Since aperiodic environment requires using an on-line scheduler, there is no algorithm that can guarantee a feasible schedule.
+
+\subsubsection{Overview of scheduling schemes}
+The main classes of algorithms used for handling aperiodic transient overloads are the following:
+\begin{itemize}
+    \item{best effort,}
+    \item{with acceptance test,}
+    \item{robust.}
+\end{itemize}
+Best effort algorithms always accept new tasks into the ready queue upon arrival. Tasks to be skipped are determined through proper priority assignment with respect to their value.
+
+Algorithms with acceptance test perform a guarantee test at every job activation. 
+A new task that enters the system is accepted if the task set is found schedulable by the guarantee routine. Otherwise, task is rejected.
+If an acceptance test is performed, the system is able to avoid domino effects.
+The disadvantage of acceptance tests is that they do not take task importance into account and always reject newly arrived tasks.
+
+Robust algorithms separate the schedulability verification into two routines: one for task acceptance and one for task rejection. 
+Task rejection routine solves the problem of rejection of the newly arrived tasks with high importance.
+
 \subsection{Task Overruns}
+In overrun condition, a task (or a job) exceeds its expected utilization value.
+Overruns occur if a job computation time exceeds the expected value, or due to early activation of the next job.
+Figure \ref{transient_EDF} shows the effect of transient overload condition under EDF-scheduled system. Task $\tau_3$ exceeded its expected computation time and consequently causing task 
+$\tau_2$ to miss its deadline.
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/tran_overload.pdf}
+    \caption{An example of transient overload due to task overrun under EDF-scheduled system.}
+    \label{transient_EDF}
+\end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Permanent Overload}
@@ -42,7 +109,7 @@ However, if task \(\tau_2\) is skipped every three instances, the overload is re
 \\
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.9\textwidth]{images/skipover.pdf}
+    \includegraphics[width=1\textwidth]{images/skipover.pdf}
     \caption{An example of resolving permanent overload by skipping method.}
     \label{skipover}
 \end{figure}
@@ -62,7 +129,7 @@ The authors proved that the problem of determining whether a set of periodic ski
 % The \textit{deeply-red} condition is the worst case condition for periodic task sets:
 % all tasks are synchronously activated and the first \(S_i - 1\) instances of every task $\tau_i$ are red. 
 
-For the given set of skippable periodic tasks \( \Gamma = {\tau_i(T_i,C_i,S_i)} \), the necessary schedulability condition is the following:
+For the given set of skippable periodic tasks \( \Gamma = {\tau_i(C_i,T_i,S_i)} \), the necessary schedulability condition is the following:
 \begin{equation}
 \sum_{i=1}^{n} \frac{C_i(S_i-1)}{T_i S_i} \leq 1.
 \end{equation}
@@ -71,7 +138,7 @@ A sufficient condition for guaranteeing schedulability of a set of skippable tas
 using the equivalent utilization factor, which is formally described in the following definition:
 \newtheorem{mydef}{Definition}
 \begin{mydef}
-Given a set \( \Gamma = {\tau_i(T_i,C_i,S_i)} \) of n skippable periodic tasks, the equivalent utilization factor is defined as:
+Given a set \( \Gamma = {\tau_i(C_i,T_i,S_i)} \) of n skippable periodic tasks, the equivalent utilization factor in time interval \([0,L]\) is defined as:
 \begin{equation*}
 U_p^\ast = \max_{L \geq 0} \frac{\sum_{i}D(i, [0,L])}{L}
 \end{equation*}
@@ -84,9 +151,143 @@ D(i, [0,L]) = \left\lfloor \frac{L}{T_i} - \frac{L}{T_i \cdot S_i}\right\rfloor 
 According to the sufficient schedulability condition, a set of skippable periodic tasks is schedulable if \( U_p^\ast \leq 1 \).
 
 \subsubsection{RTO Algorithm}
-\subsubsection{BWP Algorithm}
-\subsubsection{RLP Algorithm}
+The Red Tasks Only (RTO) algorithm decreases system load by always skipping the blue tasks, while red tasks are scheduled according to EDF. 
+The algorithm becomes optimal under a certain condition, the \textit{deeply-red} condition:
+all tasks are synchronously activated and the first \(S_i - 1\) instances of every task $\tau_i$ are red. 
+The stated condition is the worst-case condition for periodic task sets.
+As all instances of blue tasks are systematically rejected irregardless of their impact on the equivalent utilization factor, RTO schedule has the lowest QoS level for given task set.
+Implementation of RTO algorithm was tested on an example shown in 
+figure \ref{rto}.
+Total processor utilization $U_p$ equals 1.19 and the equivalent processor 
+utilization $U_p^\ast$ equals 0.79.
+As the schedule results in seven missed instances, QoS equals 0.53. 
+\\
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/skipover_RTO.pdf}
+    \caption{An example of a schedule produced by RTO algorithm with skipping factor $s_i=2$.}
+    \label{rto}
+\end{figure}
 
+\subsubsection{BWP Algorithm}
+Blue When Possible (BWP) algorithm introduces amendments of RTO algorithm disadvantages in a way that blue tasks execute only if there are no red ready instances.
+As BWP increases the number of task instances that complete successfully, it offers a higher QoS level. 
+Figure \ref{bwp} depicts the same overload condition as described in figure 
+\ref{rto}, but solved by BWP algorithm. 
+Total number of completed task instances is increased because two blue instances completed successfully, thus increasing QoS to 0.67.
+\\
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/skipover_BWP.pdf}
+    \caption{An example of a schedule produced by BWP algorithm with skipping factor $s_i=2$.}
+    \label{bwp}
+\end{figure}
+
+\subsubsection{EDL Algorithm}
+Earliest Deadline as Late as Possible (EDL) algorithm represents a basis of approaches for enhancing the QoS of skippable periodic tasks.
+The main idea of EDL is to differ the execution of tasks which results in maximizing the length of idle time periods at the beginning of the schedule.
+Determination  of  the  duration  and  position  of  these  idle  times  is  done  by mapping out the EDL schedule produced from time zero up to the end of the first hyperperiod \cite{ghor2011real}.
+This approach makes any spare processing time available as soon as possible, 
+thus effectively stealing slack from the hard deadline periodic tasks 
+\cite{queudet2012quality}. 
+Available slack at any time can be determined by mapping out an EDL schedule from current time to the end of the current hyperperiod.
+EDL schedule is constructed dynamically at run-time from a static EDL schedule.
+A static EDL schedule is constructed off-line and determined by two vectors:
+\begin{itemize}
+	\item{$K$ - static deadline vector,}
+	\item{$D$ - static idle time vector.}
+\end{itemize}
+Vector $K$ stores the time instants from 0 to the end of the first hyperperiod at which idle times occur. 
+Vector $D$ represents the lengths of idle times starting at time instances stored in $K$.
+Vectors describing the dynamic EDL schedule are the following:
+\begin{itemize}
+	\item{$K_t$} - dynamic deadline vector,
+	\item{$D_t$} - dynamic idle time vector.
+\end{itemize}
+$K_t$ represents the instants $k_i$ from $t$ in the current hyperperiod at which idle times occur. 
+The lengths of idle times starting at instants $k_i$ are stored in the vector $D_t$.
+
+As EDL idle time is determined by the described vectors EDL schedule itself is not considered in this work because the vectors can be computed with the aid of EDF schedule.
+EDL idle times are computed through corresponding EDF values, according to the following theorem \cite{chetto1989some}:
+\begin{align}
+f_T^{EDL}(H - t) = f_t^{EDF}(t),
+\end{align}
+Where $H$ is the hyperperiod and $f_t$ is the availability function:
+\begin{equation*}
+f_T(t) = \begin{cases}
+1 &\text{if processor is idle at $t$,}\\
+0 &\text{else.}
+\end{cases}
+\end{equation*}
+
+Consequently, EDL static deadline vector can be computed from EDF vector by simply reversing the elements.
+
+EDL deadline vector values can be calculated according to the following formula:
+\begin{align}
+k_i^{EDL} = H - k_i^{EDF} - c_i.
+\end{align} 
+
+\subsubsection{RLP Algorithm}
+The Red Tasks as Late as Possible (RLP) algorithm stimulates the execution of blue instances by using EDL to build a schedule considering only the red instances. 
+If there are no blue instances ready for execution, red instances are scheduled according to EDF algorithm.
+Otherwise, red instances are processed as late as possible by the EDL rule, while blue instances are executed as soon as possible in the remaining EDL idle times.
+
+A pseudo-code for RLP algorithm is given in code listing \ref{alg:rlp}.
+The tasks are stored in three lists, sorted in increasing order of deadline: 
+\begin{itemize}
+	\item{waiting list: list of instances waiting for their next release,}
+	\item{red ready list: list of red instances in ready state,}
+	\item{blue ready list: list of blue instances in ready state.}
+\end{itemize}
+At every time slice, the scheduler checks whether any instances changed their state from ready to waiting or vice versa and updates all three lists.
+If current time belongs to an EDL idle time, the first instance in the blue ready list is selected for execution. Otherwise, the first instance from the red ready list is selected.
+
+
+\begin{algorithm}
+\caption{RLP scheduling algorithm.\label{alg:rlp}}
+\begin{algorithmic}
+% \COMMENT{checking blue list in order to abort tasks}
+\WHILE{$blue\_ready\_list \neq \emptyset$}
+\STATE $task \leftarrow next(blue\_ready\_list)$
+\IF{$task_{release\_time} + task_{critical\_delay} < current\_time$} 
+\STATE break
+\ENDIF
+\STATE $task \leftarrow pull(blue\_ready\_list)$
+\STATE $task_{release\_time} = task_{release\_time} + task_{period}$
+\STATE $task_{current\_skip\_value} = 1$
+\STATE $waiting\_list \leftarrow append(task, waiting\_list)$
+\ENDWHILE
+% \COMMENT{checking waiting list in order to release tasks}
+\WHILE{$task \leftarrow next(waiting\_list)$}
+\IF{$task_{release\_time} > current\_time$}
+\STATE break
+\ENDIF
+\IF{$task_{current\_skip\_value} < task_{max\_skip\_value}$ 
+\AND $f\_EDL(current\_time) = 0$ }
+	% \Comment{red task release}
+\STATE $task \leftarrow pull(waiting\_list)$
+\STATE $red\_ready\_list \leftarrow append(task, red\_ready\_list)$
+\ELSE 
+\IF{$blue\_ready\_list \neq \emptyset$}
+\STATE$compute$ $EDL\_schedule$
+\ENDIF
+\IF{$f\_EDL(current\_time) \neq 0$}
+\STATE $task \leftarrow pull(waiting\_list)$
+\STATE $blue\_ready\_list \leftarrow append(task, red\_ready\_list)$
+\ENDIF
+\ENDIF
+\STATE $task_{current\_skip\_value} += 1$
+\ENDWHILE
+\IF{$blue\_ready\_list \neq \emptyset$ 
+\AND $f\_EDL(current\_time) \neq 0$}
+% \Comment{checking red ready list in order to suspend task}
+\WHILE{$task \leftarrow next(red\_ready\_list)$}
+\STATE $task \leftarrow pull(red\_ready\_list)$
+\STATE $waiting\_list \leftarrow append(task, waiting\_list)$
+\ENDWHILE
+\ENDIF
+\end{algorithmic}
+\end{algorithm}
 
 \subsection{Period Adaptation}
 \subsection{Service Adaptation}
