@@ -12,16 +12,15 @@ In a system consisting of preemptable periodic tasks with implicit deadlines, sy
 where $C_i$ is the computation time and $T_i$ is the period of task $\tau_i$.
 If load value is greater than one, the task set is non-schedulable because the total computation time requested by the periodic tasks exceeds the available processor time.
 
-When an overload condition occurs, it is inevitable that one or more task miss their deadlines. 
-Therefore, it is preferable that those tasks are of less importance than the ones that can complete successfully. 
-
-Task importance is specified through a value parameter, associated with each task.
-Depending on particular application, task value may be directly related to task parameters such as computation time or deadline value, but can also be set to an arbitary value.
-Task values in real-time systems often depend on the time at which the task is executed, so the task importance can be described by an utility function 
-\cite{buttazzo2011hard}.
-Utility functions differ for single task types, as shown in figure \ref{utiliy_fcn}.
-%%% TODO ovdje ide slika \caption{Utility functions for four different types of tasks}
-Methods of handling overload conditions presented in this work consider firm real-time tasks that give an insignificant contribution if completed after their deadline.
+% When an overload condition occurs, it is inevitable that one or more task miss their deadlines. 
+% Therefore, it is preferable that those tasks are of less importance than the ones that can complete successfully. 
+% Task importance is specified through a value parameter, associated with each task.
+% Depending on particular application, task value may be directly related to task parameters such as computation time or deadline value, but can also be set to an arbitary value. 
+% Task values in real-time systems often depend on the time at which the task is executed, so the task importance can be described by an utility function 
+% \cite{buttazzo2011hard}. 
+% Utility function properties depend on task types. 
+% Utility functions differ for single task types, as shown in figure \ref{utiliy_fcn}.
+% Methods of handling overload conditions presented in this work consider firm real-time tasks that give an insignificant contribution if completed after their deadline.
 
 \section{Transient Overload}
 Transient overload occurs for a limited duration, in a system with the average load less or equal to one.
@@ -41,15 +40,14 @@ The execution of task $\tau_0$ leads to deadline miss of all the previous tasks.
 \end{figure}
 
 As shown in \cite{buttazzo2011hard}, it's impossible to create an optimal on-line algorithm that handles overload situations.
-Since aperiodic environment requires using an on-line scheduler, there is no algorithm that can guarantee a feasible schedule.
-
-\subsubsection{Overview of scheduling schemes}
-The main classes of algorithms used for handling aperiodic transient overloads are the following:
+Since aperiodic environment requires using an online scheduler, there is no algorithm that can guarantee a feasible schedule.
+However, there are different online scheduling algorithms proposed in the literature and they can be divided into three main classes:
 \begin{itemize}
     \item{best effort,}
     \item{with acceptance test,}
     \item{robust.}
 \end{itemize}
+
 Best effort algorithms always accept new tasks into the ready queue upon arrival. Tasks to be skipped are determined through proper priority assignment with respect to their value.
 
 Algorithms with acceptance test perform a guarantee test at every job activation. 
@@ -63,14 +61,27 @@ Task rejection routine solves the problem of rejection of the newly arrived task
 \subsection{Task Overruns}
 In overrun condition, a task (or a job) exceeds its expected utilization value.
 Overruns occur if a job computation time exceeds the expected value, or due to early activation of the next job.
-Figure \ref{transient_EDF} shows the effect of transient overload condition under EDF-scheduled system. Task $\tau_3$ exceeded its expected computation time and consequently causing task 
-$\tau_2$ to miss its deadline.
+Transient overloads due to overruns occur if tasks execute for a longer time than expected, or more frequently than expected.
+
+Figure \ref{transient_EDF} shows the effect of transient overload condition under EDF-scheduled system. Task $\tau_3$ exceeded its expected computation time, consequently causing task $\tau_2$ to miss its deadline.
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.8\textwidth]{images/tran_overload.pdf}
     \caption{An example of transient overload due to task overrun under EDF-scheduled system.}
     \label{transient_EDF}
 \end{figure}
+
+Overruns are prevented by either aborting the job experiencing an overrun or letting it continue with a lower priority. 
+The first solution is not safe because the job could be in a critical section when aborted, thus leaving a shared resource with inconsistent data 
+\cite{buttazzo2011hard}. 
+
+A method for implementing the second solution is called resource reservation.
+Each task is assigned a fraction of the processor bandwidth, just enough to satisfy its timing constraints, while the kernel prevents each task from consuming more than the requested amount \cite{buttazzo2011hard}. 
+A general approach for implementing this method is to reserve each task an amount of processor time $Q_i$ in every time interval $P_i$. 
+The reservations can be hard or soft: a hard reservation allows the reserved task to execute at most for $Q_i$ units of time every $P_i$, while a soft reservation allows it to execute for more than $Q_i$ units if there is idle time available. 
+In this way, the tasks are effectively reshaped and they can be considered as 
+periodic real-time tasks with parameters \( (Q_i, P_i) \) that can be scheduled by a classical real-time scheduler.
+The disadvantage of this approach is that the system performance becomes dependent on correct resource reservation. The task may slown down the system if is assinged a much less CPU bandwidth than its average requested value. Contrarily, if the allocated bandwidth is greater than needed, the system will run with low efficiency.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Permanent Overload}
@@ -85,11 +96,11 @@ Methods for reducing permanent overload are the following:
 \end{itemize}
 
 \subsection{Job Skipping}
-Job skipping method reduces system load by skipping some jobs in the task set. Jobs to be skipped are assigned in a way that the remainig jobs can be scheduled within their deadlines.
-This method is applicable for firm tasks, as they allow a certain miss ratio. 
+Job skipping method reduces system load by skipping some jobs in the task set. Jobs to be skipped are assigned in a way that the remaining jobs can be scheduled within their deadlines.
+This method is applicable for firm real-time tasks, as they allow a certain miss ratio. 
 The quantified ratio of tasks that may not be executed is directly related to Quality of Service 
 (QoS) metric. 
-The algorithms presented in this section address the task miss ratio as a QoS concern, with the purpose of maximizing the QoS of periodic tasks.
+The algorithms presented in this section have the purpose of maximizing the QoS of periodic tasks.
 
 A task model suitable for job skipping method is known in literature as the firm periodic model.
 It was first described by Koren and Shasha \cite{koren1995skip}.
@@ -97,7 +108,7 @@ According to this model, every task is described as following:
 \begin{align*}
 \tau_i(C_i, T_i, D_i, S_i)
 \end{align*}
-where $C_i$ is the worst-case computation time, $T_i$ is the task period, $D_i$ is the relative deadline (assumed equal to the period). $S_i$ is the skip parameter and it marks the minimum distance between two consecutive skips, \(2 \leq S_i \leq \infty\).
+where $C_i$ is the worst-case computation time, $T_i$ is the task period, $D_i$ is the relative deadline (assumed equal to the period). $S_i$ is the skip parameter and it marks the minimum distance between two consecutive skips, \(2 \leq S_i < \infty\).
 
 An example of schedule with task skipping is given in figure \ref{skipover}. 
 Since the utilization factor equals 
@@ -122,12 +133,7 @@ With respect to the skip parameter $S_i$, each scheduling algorithm needs to ful
 	\item if a blue job is skipped, then the next \(S_i - 1\) jobs must be red,
 	\item if a blue job completes successfully, the next job is also blue.
 \end{itemize}
-The authors proved that the problem of determining whether a set of periodic skippable tasks is schedulable is NP-hard \cite{koren1995skip}.
-
-% Although the algorithms are not optimal, they become optimal under a certain condition, called the 
-% \textit{deeply-red} condition. 
-% The \textit{deeply-red} condition is the worst case condition for periodic task sets:
-% all tasks are synchronously activated and the first \(S_i - 1\) instances of every task $\tau_i$ are red. 
+The authors of the model proved that the problem of determining whether a set of periodic skippable tasks is schedulable is NP-hard \cite{koren1995skip}.
 
 For the given set of skippable periodic tasks \( \Gamma = {\tau_i(C_i,T_i,S_i)} \), the necessary schedulability condition is the following:
 \begin{equation}
@@ -183,9 +189,13 @@ Total number of completed task instances is increased because two blue instances
     \label{bwp}
 \end{figure}
 
-\subsubsection{EDL Algorithm}
-Earliest Deadline as Late as Possible (EDL) algorithm represents a basis of approaches for enhancing the QoS of skippable periodic tasks.
-The main idea of EDL is to differ the execution of tasks which results in maximizing the length of idle time periods at the beginning of the schedule.
+\subsubsection{RLP Algorithm}
+The Red Tasks as Late as Possible (RLP) algorithm stimulates the execution of blue tasks by executing them at idle times of a schedule considering only the red tasks. 
+A basis of this approach is the Earliest Deadline as Late as Possible (EDL) algorithm. 
+EDL is used to build a schedule on the red instances only, where red instances execute as late as possible. 
+In the remaining EDL idle times, blue tasks are executed as soon as possible. 
+The main idea of EDL is to maximize the length of idle time periods at the beginning of the schedule. 
+
 Determination  of  the  duration  and  position  of  these  idle  times  is  done  by mapping out the EDL schedule produced from time zero up to the end of the first hyperperiod \cite{ghor2011real}.
 This approach makes any spare processing time available as soon as possible, 
 thus effectively stealing slack from the hard deadline periodic tasks 
@@ -198,17 +208,18 @@ A static EDL schedule is constructed off-line and determined by two vectors:
 	\item{$D$ - static idle time vector.}
 \end{itemize}
 Vector $K$ stores the time instants from 0 to the end of the first hyperperiod at which idle times occur. 
-Vector $D$ represents the lengths of idle times starting at time instances stored in $K$.
-Vectors describing the dynamic EDL schedule are the following:
+Vector $D$ represents the lengths of idle times starting at time instances stored in $K$. 
+Dynamic EDL schedule takes the execution of current running task into account and it is described by the following vectors:
 \begin{itemize}
 	\item{$K_t$} - dynamic deadline vector,
 	\item{$D_t$} - dynamic idle time vector.
 \end{itemize}
 $K_t$ represents the instants $k_i$ from $t$ in the current hyperperiod at which idle times occur. 
-The lengths of idle times starting at instants $k_i$ are stored in the vector $D_t$.
+The lengths of idle times starting at instants $k_i$ are stored in the vector $D_t$. 
 
-As EDL idle time is determined by the described vectors EDL schedule itself is not considered in this work because the vectors can be computed with the aid of EDF schedule.
-EDL idle times are computed through corresponding EDF values, according to the following theorem \cite{chetto1989some}:
+% As EDL idle time is determined by the described vectors, EDL schedule itself is not considered in this work because the vectors can be computed with the aid of EDF schedule.
+
+In this work, EDL idle times are computed through corresponding EDF values, according to the expression stated in \cite{chetto1989some}:
 \begin{align}
 f_T^{EDL}(H - t) = f_t^{EDF}(t),
 \end{align}
@@ -224,14 +235,15 @@ Consequently, EDL static deadline vector can be computed from EDF vector by simp
 
 EDL deadline vector values can be calculated according to the following formula:
 \begin{align}
-k_i^{EDL} = H - k_i^{EDF} - c_i.
+k_i^{EDL} = H - k_i^{EDF} - d_i.
 \end{align} 
 
-\subsubsection{RLP Algorithm}
-The Red Tasks as Late as Possible (RLP) algorithm stimulates the execution of blue instances by using EDL to build a schedule considering only the red instances. 
-If there are no blue instances ready for execution, red instances are scheduled according to EDF algorithm.
-Otherwise, red instances are processed as late as possible by the EDL rule, while blue instances are executed as soon as possible in the remaining EDL idle times.
+The idle function for given time instance is updated during the execution of RLP algorithm. 
+Update of EDL algorithm takes into account the current red ready tasks and the current running task, if it's current state is red. 
+Dynamic EDL algorithm is calculated whenever a blue task is released, or a blue task is completed. 
 
+% If there are no blue instances ready for execution, red instances are scheduled according to EDF algorithm.
+% Otherwise, red instances are processed as late as possible by the EDL rule, while blue instances are executed as soon as possible in the remaining EDL idle times.
 A pseudo-code for RLP algorithm is given in code listing \ref{alg:rlp}.
 The tasks are stored in three lists, sorted in increasing order of deadline: 
 \begin{itemize}
@@ -239,55 +251,173 @@ The tasks are stored in three lists, sorted in increasing order of deadline:
 	\item{red ready list: list of red instances in ready state,}
 	\item{blue ready list: list of blue instances in ready state.}
 \end{itemize}
-At every time slice, the scheduler checks whether any instances changed their state from ready to waiting or vice versa and updates all three lists.
+At every time slice, the scheduler checks whether any instances changed their state from ready to waiting or vice versa and updates all three lists. 
+If there is a missed instance of a task in blue ready list, task is aborted and it's new instance is put into waiting list. 
+Next, the waiting list is checked in order to indentify ready tasks. 
+Ready tasks are put into red and blue ready list according to their state and the idle function value at current time. 
 If current time belongs to an EDL idle time, the first instance in the blue ready list is selected for execution. Otherwise, the first instance from the red ready list is selected.
-
 
 \begin{algorithm}
 \caption{RLP scheduling algorithm.\label{alg:rlp}}
 \begin{algorithmic}
-% \COMMENT{checking blue list in order to abort tasks}
-\WHILE{$blue\_ready\_list \neq \emptyset$}
-\STATE $task \leftarrow next(blue\_ready\_list)$
-\IF{$task_{release\_time} + task_{critical\_delay} < current\_time$} 
+\STATE initialize tasks
+\FOR{task in blue\_ready}
+\IF{$task_{next\_instance}$}
+\STATE abort task
+\ENDIF
+\ENDFOR
+\FOR{task in waiting\_list}
+\IF{\NOT $task_{ready}$}
 \STATE break
 \ENDIF
-\STATE $task \leftarrow pull(blue\_ready\_list)$
-\STATE $task_{release\_time} = task_{release\_time} + task_{period}$
-\STATE $task_{current\_skip\_value} = 1$
-\STATE $waiting\_list \leftarrow append(task, waiting\_list)$
-\ENDWHILE
-% \COMMENT{checking waiting list in order to release tasks}
-\WHILE{$task \leftarrow next(waiting\_list)$}
-\IF{$task_{release\_time} > current\_time$}
-\STATE break
-\ENDIF
-\IF{$task_{current\_skip\_value} < task_{max\_skip\_value}$ 
-\AND $f\_EDL(current\_time) = 0$ }
-	% \Comment{red task release}
-\STATE $task \leftarrow pull(waiting\_list)$
-\STATE $red\_ready\_list \leftarrow append(task, red\_ready\_list)$
-\ELSE 
-\IF{$blue\_ready\_list \neq \emptyset$}
-\STATE$compute$ $EDL\_schedule$
+\IF{$task_{state}$==RED
+\AND$f_{EDL}(t)=0$}
+\STATE pull task from $waiting\_list$
+\STATE put task into $red\_ready$ list
+\ELSE
+\IF{$blue\_ready = \emptyset$}
+\STATE compute EDL schedule
 \ENDIF
 \IF{$f\_EDL(current\_time) \neq 0$}
-\STATE $task \leftarrow pull(waiting\_list)$
-\STATE $blue\_ready\_list \leftarrow append(task, red\_ready\_list)$
+\STATE pull task from $waiting\_list$
+\STATE put task into $blue\_ready$ list
 \ENDIF
 \ENDIF
-\STATE $task_{current\_skip\_value} += 1$
-\ENDWHILE
-\IF{$blue\_ready\_list \neq \emptyset$ 
+\ENDFOR
+\IF{$blue\_ready \neq \emptyset$ 
 \AND $f\_EDL(current\_time) \neq 0$}
-% \Comment{checking red ready list in order to suspend task}
-\WHILE{$task \leftarrow next(red\_ready\_list)$}
-\STATE $task \leftarrow pull(red\_ready\_list)$
-\STATE $waiting\_list \leftarrow append(task, waiting\_list)$
-\ENDWHILE
+\FOR{task in red\_ready list}
+\STATE pull task from red ready list
+\STATE put task into ready list
+\ENDFOR
 \ENDIF
 \end{algorithmic}
 \end{algorithm}
 
+An impementation of the RLP algorithm was tested on the same set of periodic tasks as in the previous sections and the resulting schedule is shown in figure 
+\ref{rlp_schedule}.
+Since there are four deadline misses, the QoS is increased to 0.73.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/skipover_RLP.pdf}
+    \caption{An example of a schedule produced by RLP algorithm with skipping factor $s_i=2$.}
+    \label{rlp_schedule}
+\end{figure}
+
+A comparison of QoS value depending on the utilization value for the described algorithms is shown in figure \ref{fm_comparison}.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/fm_comparison.pdf}
+    \caption{Comparison of QoS value for RTO, BWP and RLP algorithm.}
+    \label{fm_comparison}
+\end{figure}
+
+% \begin{algorithm}
+% \caption{RLP scheduling algorithm.\label{alg:rlp}}
+% \begin{algorithmic}
+% \STATE initialize tasks 
+
+% \IF{$running\_task$} 
+% \IF{$current\_time == running\_task_{due\_date}$ 
+% \AND $running\_task_{remaining\_time} > 0$}
+% \STATE $running\_task_{state} = RED$ \COMMENT{running task is going to miss deadline}
+% \STATE $set\_next\_instance( running\_task )$
+% \STATE $waiting\_list \leftarrow running\_task$
+% \ENDIF
+% \ENDIF
+
+
+% \WHILE{$blue\_ready\_list \neq \emptyset$}
+
+% \STATE $task \leftarrow next(blue\_ready\_list)$
+% \IF{$task_{release\_time} + task_{critical\_delay} < current\_time$} 
+% \STATE break
+% \ENDIF
+% \STATE $task \leftarrow pull(blue\_ready\_list)$ \COMMENT{abort blue tasks}
+% \STATE $set\_next\_instance( task )$
+% \STATE $waiting\_list \leftarrow append(task, waiting\_list)$
+% \ENDWHILE
+% \COMMENT{checking waiting list in order to release tasks}
+% \WHILE{$waiting\_list \neq \emptyset$}
+% \STATE $task \leftarrow pull(waiting\_list)$
+% \IF{$task_{release_time} > current\_time$}
+% \STATE $break$
+% \ENDIF 
+% \IF{$task_{state}==RED$
+% \AND$f_{EDL}(t)=0$}
+% \STATE$task \leftarrow pull(waiting\_list)$ \COMMENT{red task release}
+% \STATE$red\_ready\_list \leftarrow append(task, red\_ready\_list)$
+% \ELSE
+% \IF{$blue\_ready\_list \neq \emptyset$}
+% \STATE$compute$ $EDL\_schedule$
+% \ENDIF
+% \IF{$f\_EDL(current\_time) \neq 0$}
+% \STATE $task \leftarrow pull(waiting\_list)$
+% \STATE $blue\_ready\_list \leftarrow append(task, red\_ready\_list)$
+% \COMMENT{blue task release}
+% \ENDIF
+% \ENDIF
+% \STATE $task_{current\_skip\_value} += 1$
+% \ENDWHILE
+% \IF{$blue\_ready\_list \neq \emptyset$ 
+% \AND $f\_EDL(current\_time) \neq 0$}
+% \WHILE{$task \leftarrow next(red\_ready\_list)$}
+% \STATE $task \leftarrow pull(red\_ready\_list)$ \COMMENT{suspend red task}
+% \STATE $waiting\_list \leftarrow append(task, waiting\_list)$
+% \ENDWHILE
+% \ENDIF
+% \end{algorithmic}
+% \end{algorithm}
+
+\newpage
 \subsection{Period Adaptation}
+If a periodic task set experiences a permanent overload, one way of reducing the system load is to vary tasks' rates in order to keep the total load under below a desired threshold.
+A method of reducing the system load by enlarging task periods is called period adaptation. 
+Whenever the system cannot guarantee the acceptance of a new task, instead of rejecting it, the system can try to reduce the utilizations of other tasks by increasing their periods. In that way, the total load is decreased and the new task may be accepted.
+
+A method for changing task periods as a function of the desired workload is the elastic framework. Each task is considered as flexible as a spring, whose utilization can be modified by changing its period within a specified range 
+\cite{lee2007handbook}.
+
+Each task $\tau_i$ is detoned by:
+\begin{equation*}
+\tau_i(C_i, T_{i_{min}}, T_{i_{max}}, E_i),
+\end{equation*}
+where $C_i$ is computation time, $T_{i_{min}}$ and $T_{i_{max}}$ are its minimum and maximum period, respectively.
+Minimum period is considered as a nominal period. 
+ $E_i$ is the elastic coefficient which specifies the flexibility of the task.
+Corresponding to $T_{i_{min}}$ and $T_{i_{max}}$, the maximum and minimum utilization of the task set is defined in the following way:
+\begin{align*}
+U_{max} = \sum_{i=1}^{n}\frac{C_i}{T_{min}},\\
+U_{min} = \sum_{i=1}^{n}\frac{C_i}{T_{max}}.
+\end{align*}
+
+For example, in a task set scheduled by EDF, the elastic model can be used to adapt the task periods so that the task set becomes schedulable:
+\begin{equation*}
+\sum_{i=1}^{n}\frac{C_i}{T_i} = U_d \leq 1,
+\end{equation*}
+where $U_d$ is the desired utilization factor.
+This is possible as long as the desired utilization value is grater or equal to minimum utilization value.
+
+According to \cite{lee2007handbook}, if there are no constrains on the maximum tesk periods, the utilization of each compressed task can be computed by the following expression:
+\begin{equation*}
+U_i = U_{i_{max}} - ( U_{max} - U_d ) \cdot \frac{E_i}{E_{tot}},
+\end{equation*}
+where \( E_{tot} = \sum_{i=1}^{n}E_i \).
+
+The main advantage of this approach is that a new period configuration can be determined online based on the values of elastic coefficients, which are set beforehand based on some design criterion.
+On the other hand, in the presence of period constraints, the compression algorithm becomes iterative with complexity \( O(n^2) \) \cite{lee2007handbook}.
+
 \subsection{Service Adaptation}
+Service adaptation method reduces the system load by decreasing the task computation times. 
+This approach is only applicable with the tasks whose result quality is directly related to computation time.
+An example of such tasks are algortihms that produce approximated results where the precision of the results depends on the number of iterations, and thus with the computation time. 
+An overload condition can be handled by reducing the quality of results, aborting the remaining computation if the quality of the current result is acceptable \cite{buttazzo2011hard}. 
+The described concept is known in literature as imprecise computation. 
+
+% In a system that supports imprecise computation, every task is divided into a mandatory subtask $M_i$ and an optional subtask $O_i$. 
+% Mandatory subtask must be completed in order to produce a result of acceptable quality, whereas the optional subtask refines this result 
+% \cite{shih1989scheduling}. 
+% Both subtasks have the same arrival time and deadline as the original task, but the optional subtask is ready for execution after the mandatory task is completed. 
+
