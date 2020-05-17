@@ -39,7 +39,7 @@ The execution of task $\tau_0$ leads to deadline miss of all the previous tasks.
     \label{aperiodic}
 \end{figure}
 
-As shown in \cite{buttazzo2011hard}, it's impossible to create an optimal on-line algorithm that handles overload situations.
+As shown in \cite{buttazzo2011hard}, it is impossible to create an optimal on-line algorithm that handles overload situations.
 Since aperiodic environment requires using an online scheduler, there is no algorithm that can guarantee a feasible schedule.
 However, there are different online scheduling algorithms proposed in the literature and they can be divided into three main classes:
 \begin{itemize}
@@ -63,7 +63,7 @@ In overrun condition, a task (or a job) exceeds its expected utilization value.
 Overruns occur if a job computation time exceeds the expected value, or due to early activation of the next job.
 Transient overloads due to overruns occur if tasks execute for a longer time than expected, or more frequently than expected.
 
-Figure \ref{transient_EDF} shows the effect of transient overload condition under EDF-scheduled system. Task $\tau_3$ exceeded its expected computation time, consequently causing task $\tau_2$ to miss its deadline.
+Figure \ref{transient_EDF} shows the effect of transient overload condition under EDF-scheduled system. Task $\tau_2$ exceeded its expected computation time, consequently causing task $\tau_1$ to miss its deadline.
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.8\textwidth]{images/tran_overload.pdf}
@@ -103,12 +103,12 @@ The quantified ratio of tasks that may not be executed is directly related to Qu
 The algorithms presented in this section have the purpose of maximizing the QoS of periodic tasks.
 
 A task model suitable for job skipping method is known in literature as the firm periodic model.
-It was first described by Koren and Shasha \cite{koren1995skip}.
+It was first described in \cite{koren1995skip}.
 According to this model, every task is described as following:
 \begin{align*}
-\tau_i(C_i, T_i, D_i, S_i)
+\tau_i(c_i, T_i, d_i, s_i)
 \end{align*}
-where $C_i$ is the worst-case computation time, $T_i$ is the task period, $D_i$ is the relative deadline (assumed equal to the period). $S_i$ is the skip parameter and it marks the minimum distance between two consecutive skips, \(2 \leq S_i < \infty\).
+where $c_i$ is the worst-case computation time, $T_i$ is the task period, $d_i$ is the relative deadline (assumed equal to the period) and $s_i$ is the skip parameter which marks the minimum distance between two consecutive skips, \(2 \leq S_i < \infty\).
 
 An example of schedule with task skipping is given in figure \ref{skipover}. 
 Since the utilization factor equals 
@@ -142,7 +142,7 @@ For the given set of skippable periodic tasks \( \Gamma = {\tau_i(C_i,T_i,S_i)} 
 
 A sufficient condition for guaranteeing schedulability of a set of skippable tasks can be stated 
 using the equivalent utilization factor, which is formally described in the following definition:
-\newtheorem{mydef}{Definition}
+
 \begin{mydef}
 Given a set \( \Gamma = {\tau_i(C_i,T_i,S_i)} \) of n skippable periodic tasks, the equivalent utilization factor in time interval \([0,L]\) is defined as:
 \begin{equation*}
@@ -158,9 +158,9 @@ According to the sufficient schedulability condition, a set of skippable periodi
 
 \subsubsection{RTO Algorithm}
 The Red Tasks Only (RTO) algorithm decreases system load by always skipping the blue tasks, while red tasks are scheduled according to EDF. 
-The algorithm becomes optimal under a certain condition, the \textit{deeply-red} condition:
-all tasks are synchronously activated and the first \(S_i - 1\) instances of every task $\tau_i$ are red. 
-The stated condition is the worst-case condition for periodic task sets.
+% The algorithm becomes optimal under a certain condition, the \textit{deeply-red} condition:
+% all tasks are synchronously activated and the first \(S_i - 1\) instances of every task $\tau_i$ are red. 
+% The stated condition is the worst-case condition for periodic task sets.
 As all instances of blue tasks are systematically rejected irregardless of their impact on the equivalent utilization factor, RTO schedule has the lowest QoS level for given task set.
 Implementation of RTO algorithm was tested on an example shown in 
 figure \ref{rto}.
@@ -235,11 +235,11 @@ Consequently, EDL static deadline vector can be computed from EDF vector by simp
 
 EDL deadline vector values can be calculated according to the following formula:
 \begin{align}
-k_i^{EDL} = H - k_i^{EDF} - d_i.
+k_i^{EDL} = H - k_i^{EDF} - c_i.
 \end{align} 
 
 The idle function for given time instance is updated during the execution of RLP algorithm. 
-Update of EDL algorithm takes into account the current red ready tasks and the current running task, if it's current state is red. 
+Update of EDL algorithm takes into account the current red ready tasks and the current running task, if its current state is red. 
 Dynamic EDL algorithm is calculated whenever a blue task is released, or a blue task is completed. 
 
 % If there are no blue instances ready for execution, red instances are scheduled according to EDF algorithm.
@@ -252,7 +252,7 @@ The tasks are stored in three lists, sorted in increasing order of deadline:
 	\item{blue ready list: list of blue instances in ready state.}
 \end{itemize}
 At every time slice, the scheduler checks whether any instances changed their state from ready to waiting or vice versa and updates all three lists. 
-If there is a missed instance of a task in blue ready list, task is aborted and it's new instance is put into waiting list. 
+If there is a missed instance of a task in blue ready list, task is aborted and its new instance is put into waiting list. 
 Next, the waiting list is checked in order to indentify ready tasks. 
 Ready tasks are put into red and blue ready list according to their state and the idle function value at current time. 
 If current time belongs to an EDL idle time, the first instance in the blue ready list is selected for execution. Otherwise, the first instance from the red ready list is selected.
@@ -413,8 +413,10 @@ On the other hand, in the presence of period constraints, the compression algori
 Service adaptation method reduces the system load by decreasing the task computation times. 
 This approach is only applicable with the tasks whose result quality is directly related to computation time.
 An example of such tasks are algortihms that produce approximated results where the precision of the results depends on the number of iterations, and thus with the computation time. 
-An overload condition can be handled by reducing the quality of results, aborting the remaining computation if the quality of the current result is acceptable \cite{buttazzo2011hard}. 
+An overload condition can be handled by reducing the quality of results, aborting the remaining computation if the quality of the current result is acceptable \cite{shih1989scheduling}. 
 The described concept is known in literature as imprecise computation. 
+
+
 
 % In a system that supports imprecise computation, every task is divided into a mandatory subtask $M_i$ and an optional subtask $O_i$. 
 % Mandatory subtask must be completed in order to produce a result of acceptable quality, whereas the optional subtask refines this result 

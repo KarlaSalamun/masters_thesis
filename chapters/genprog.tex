@@ -1,6 +1,221 @@
 \chapter{Genetic Programming}
 \section{Genetic Algorithms}
 \section{Tree-Based Genetic Programming}
-\section{Multicriterial Optimization}
+
+\section{Multi-Objective Optimization}
+A multi-objective optimization problem consists of multiple objective functions which are to be maximised or minimised. 
+The general form of a multi-objective optimization problem is stated as follows:
+\begin{align*}
+\text{minimize/maximize } & f_m(\textbf{x}),  & m = & 1, 2, ..., M \\
+\text{subject to } & g_j(\textbf{x}) \geq 0, & j = & 1, 2, ..., J \\
+           & h_k(\textbf{x}) = 0, & k = & 1, 2, ..., K \\
+           & x_{i}^{L} \leq x_i \leq x_{i}^{U}, & i = & 1, 2, ..., n. 
+\end{align*}
+A solution $\textbf{x}$ is a vector of $n$ decision variables: $\textbf{x} = \{x_1,x_2,...,x_n\}$.
+The terms $g_j(\textbf{x})$ and $h_k(\textbf{x})$ are called constraint functions. 
+A constraint function is a set of inequations or equations which any feasible solution must fulfill. 
+The last set of constraints defines a lower $x_{i}^{L}$ and an upper $x_{i}^{U}$ bound for the values that each decision variable can take. 
+The described sets of constraints define a decision space $D$.
+
+While optimizing a set of $M$ functions, the problem can be stated in a way that some functions need to be maximized, while the others need to be minimized. 
+Since the minimization problem of a function $f_i$ can be reduced to maximization of the function $-f_i$, the general form can be stated as a problem of maximization or minimization of all $M$ functions.
+
+In multi-objective optimization, the objective functions constitute a multi-dimensional space $Z$, called the objective space. 
+For each solution $\textbf{x}$ in the decision variable space, there exists a point in the objective space, denoted by $f(\textbf{x}) = \textbf{z} = {z_1, z_2, ... z_M}$ 
+\cite{deb2001multi}. 
+Since the fintess value $\textbf{z}$ of a solution $\textbf{x}$ is a vector, two solutions 
+$\textbf{x}^{(1)}$ and $\textbf{x}^{(2)}$ cannot be directly compared. 
+
+In most multi-objective optimization algorithms, comparison between solutions is done with the aid of the domination concept. 
+
+\begin{mydef}
+A solution $\textbf{x}^{(1)}$ is said to dominate the other solution $\textbf{x}^{(2)}$, if both conditions 1 and 2 are true: 
+\begin{enumerate}
+	\item The solution $\textbf{x}^{(1)}$ is no worse than $\textbf{x}^{(2)}$ in all objectives, or $z_j^{(1)} \geq z_j^{(2)}, \forall j \in {1,...,M}$.
+	\item The solution $\textbf{x}^{(1)}$ is strictly better than $\textbf{x}^{(2)}$ in at least one objective, or $\exists j \in {1,...,M}: z_j^{(1)} > z_j^{(2)}$.
+\end{enumerate}
+\end{mydef}
+There are three possibilities that can be the outcome of the dominance check between two solutions:
+\begin{itemize}
+	\item solution 1 dominates solution 2, 
+	\item solution 1 gets dominated by solution 2,
+	\item solutions 1 and 2 do not dominate each other.
+\end{itemize}
+
+In optimization algorithms, dominance is used to determine the quality of the solutions. 
+By performing the dominance check between every pair of solutions, the solution set can be divided into two subsets: the solutions that are not dominated by other solutions and the solutions that get dominated by at least one solution. 
+A set of all feasible solutions that are not dominated by any other solution is called a globally Pareto-optimal set. 
+
+Some multi-objective optimization algortihms require sorting the population in different subsets with respect to their closeness to the non-dominated subset \cite{cupic2013prirodom}. 
+Such subsets are referred to as fronts. 
+
+A method for sorting the population into fronts is called non-dominated sorting. 
+The complexity of the basic approach for non-dominated sorting is $O(mN^3)$.
+An approach for non-dominated sorting used in this work is described in pseudocode 
+\ref{nondomsort}. This is a faster and more acceptable method for dominated sorting which requires at most $O(mN^2)$ computations \cite{deb2001multi}.
+For every solution $i$, a domination count $\mu_i$ is calculated. The domination count is the number of solutions which dominate the solution $i$. The solutions that have $\mu_i = 0$ form a non-dominant set.
+Secondly, for every solution a set $S_i$ is determined. The set $S_i$ consists of the indices of all of the solutions that are dominated by the solution $i$. 
+The solutions with $\mu_i=0$ are set as the first front. 
+The next part of the process is to find the dominated solutions for every solution in the last 
+Next, for each of the solutions in the last identified front. 
+The counters $\mu_j$ for the dominated solutions are reduced. 
+If for any solution the counter $\mu_j$ becomes zero, it means that the solution is not dominated by any solutions in the remaining population and it is added to a new front. 
+
+\begin{algorithm}
+\caption{Non-dominated sorting.\label{nondomsort}}
+\begin{algorithmic}
+\FORALL{$i \in P$}
+\STATE set $\mu_i = 0$ and $S_i = \emptyset$
+\ENDFOR
+\FORALL{$j \neq i$ and $j \in P$}
+\IF{solution $i$ dominates solution $j$}
+\STATE $S_i = S_i + j$
+\ELSIF{solution $j$ dominates solution $i$}
+\STATE increment counter $\mu_i = \mu_i + 1$
+\ENDIF
+\IF{$\mu_i = 0$} 
+\STATE keep solution $i$ in the first non-dominated front $P_i$
+\STATE set front counter $k=1$
+\ENDIF
+\ENDFOR
+\WHILE{$P_k \neq \emptyset$}
+\STATE initialize $Q = \emptyset$ which keeps the next non-dominated front
+\FORALL{$i \in P_k$ \AND $j \in S_i$}
+\STATE $\mu_j = \mu_j - 1$
+\IF{ $\mu_j = 0$} 
+\STATE add solution $j$ to current front: $Q = Q + j$
+\ENDIF
+\ENDFOR
+\STATE set $k = k+1$
+\STATE set $P_k = Q$
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
+The algorithms based on the concept of non-dominated sorting is the Non-Dominated Sorting Genetic Algorithm (NSGA). 
+While evaluating the solutions, each individual is assigned a scalar value which represents its fitness. 
+The individuals that belog to a front closer to the non-dominated set are assigned a greater fitness value. Additionally, the individuals of the same front that are clustered are assigned a diminished fitness value. 
+In that way, the diversity between the individuals is stimulated. 
+
+In this work, the algorithm NSGA-II is used for handling multi-objective optimization problems. 
+NSGA-II is an improved version of NSGA algorithm and it will be described in the following subsection. 
+
+\subsection{NSGA-II Algorithm}
+One of the main disadvantages of the original NSGA algorithm is the lack of elitism which significantly slows down the performance of the genetic algorithm due to the loss of good solutions once they have been found \cite{deb2000fast}. 
+The NSGA-II algorithm is a modification of the original NSGA algorithm and its main feature is elitist approach in selecting new population members. 
+An implementation of the NSGA-II algorithm is described by pseudocode \ref{nsga-ii}.
+
+The NSGA-II algorithm creates an offspring population $Q_t$ of the same size $N$ as the parent population $P_t$.
+A combined population $R_t = P_t \cup Q_t$ is formed, with the size of $2N$. 
+The population $R_t$ is then sorted according to non-dominated sorting. 
+After non-dominated sorting, the population is fragmented into $\rho$ fronts: $\mathcal{F}_1, ..., \mathcal{F}_\rho$.
+The new parent population $P_{t+1}$ is formed by adding solutions from the first $\mu$ fronts which can be added in full to the new population. 
+
+Except for elitism, NSGA-II tends to preserve the diversity between individuals. 
+Therefore, the individuals of the remaining front $\mathcal{F}_{\mu+1}$ to be added to the new population are determined according to their diversity. 
+For finding the most "scattered" solutions, the crowding-sort method is used. 
+The density of the solutions surrounding a particular point in the population is estimated by crowding distance. 
+In the case of a two-objective problem, this value refers to the average distance of the two points on either side of the particular point along each of the objectives, as shown in figure 
+\ref{crowding_dist}. 
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.50\textwidth]{images/crowd_dist.pdf}
+    \caption{Crowding distance. The crowding distance of the $i$-th solution in its front (marked with solid circles) is the average side-length of the cuboid (marked with dashed lines). }
+    \label{crowding_dist}
+\end{figure}
+
+Crowding distance $i_{distance}$ is an estimate of the size of the largest cuboid enclosing the point $i$ without including any other point in the population. 
+The crowding-sort method arranges the individuals according to the crowding distance value.
+
+After creating the new parent population, an offspring population is created by crowding tournament selection, crossover and mutation. 
+Crowding tournament selection is based on the individual's rank (the number of the associated front) and the crowding distance. 
+According to the crowding tournament selection, solution $i$ is the tournament winner if any of the following coditions are fulfilled:
+\begin{enumerate}
+	\item solution $i$ has a better rank than solution $j$: $r_i < r_j$,
+	\item solution $i$ has an equal rank as solution $j$, but has a larger crowding distance: $r_i=r_j, d_i > d_j$.
+\end{enumerate}
+
+\begin{algorithm}
+\caption{The NSGA-II algorithm.\label{nsga-ii}}
+\begin{algorithmic}
+\STATE combine the current parent population $P_t$ and offspring population $Q_t$ into population $R_t$, $R_t = P_t \cup Q_t$
+\STATE perform non-dominated sorting of the population $R_t$, which creates $\rho$ fronts: 
+$\mathcal{F}_1, ..., \mathcal{F}_\rho$ 
+\STATE set the new parent population to an empty set: $P_{t+1} = \emptyset$
+\STATE set $i=1$
+\WHILE{front $i$ can fit completely into population $P_{t+1}$}
+\STATE add current front to $P_{t+1}$: $P_{t+1} = P_{t+1} \cup \mathcal{F}_i$
+\STATE $i=i+1$
+\ENDWHILE
+\STATE perform grouping sort of the front $\mathcal{F}_i$
+\STATE add $N-|P_{t+1}|$ solutions from the front $\mathcal{F}_i$ to $P_{t+1}$
+\STATE perform crowded tournament selection of the population $P_{t+1}$
+\STATE create new offspring population $Q_{t+1}$ by crossover and mutation
+\end{algorithmic}
+\end{algorithm}
+
 \section{Cooperative Coevolution}
-\section{Applications of Genetic Programming}
+Coevolutionary architectures of genetic algorithms define the fitness evaluation of an individual in relation and adaptation with respect to the other individuals in the population. 
+Coevolution can be cooperative or competitive. 
+In competitive coevolution, the evaluation of an individual is determined by a set of competitions between itself and other individuals. 
+Contrarily, in cooperative coevoluiton, collaborations between a set of individuals are necessary in order to evaluate one complete solution \cite{stoean2014support}. 
+Since cooperative coevolution is of interest in this work, this model will be described. 
+
+In cooperative coevolution, two or more genetically isolated species cooperate in solving a target problem. 
+Genetic isolation is enforced by evolving the species in separate populations. 
+The species exchange information only at fitness evaluations. 
+Target problem statement is decomposed into components and each subproblem is assigned to a species. 
+The fitness of each member is evaluated by forming collaborations with individuals from other species. 
+
+An application of cooperative coevolution is optimization of functions with multiple variables. 
+Each variable is considered as a component of the solution vector and corresponds to an individual population. 
+
+The general cooperative coevolutionary algorithm is described by pseudocode \ref{coop}.
+
+\begin{algorithm}
+\caption{The cooperative coevolution algorithm.\label{coop}}
+\begin{algorithmic}
+\STATE set $t=0$
+\FORALL{species $s$}
+\STATE randomly initialize population $P_s{t}$
+\ENDFOR
+\FORALL{species $s$}
+\STATE evaluate $P_s(t)$ by choosing collaborators from the other species
+\ENDFOR
+\WHILE{termination condition is not satisfied}
+\FORALL{species $s$}
+\STATE select parents from $P_s(t)$
+\STATE apply crossover and mutation
+\STATE evaluate offspring by choosing collaborators from the other species
+\STATE select new population $P_s(t+1)$
+\ENDFOR
+\STATE set $t=t+1$
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
+First, each population is initialized.
+In the first evaluation, random individuals from each of the other populations are selected and obtained solutions are evaluated. 
+Next, each population is evolved in the same way as specified by a regular genetic algorithm.
+For further evaluations, three attributes are considered when selecting collaborators 
+\cite{stoean2014support}:
+\begin{itemize}
+	\item collaborator selection pressure, 
+	\item collaboration pool size,
+	\item collaboration credit assignment.
+\end{itemize}
+Collaborator selection pressure refers to the way of selecting collaborators from other populations when evaluating an individual. 
+One can select the best individual according to its previous fitness score, pick a random individual or use classic selection schemes. 
+Collaboration pool size represents the number of collaborators that are selected from each population. 
+Collaboration credit assignment determines the way of computing the fitness of the current individual. This attribute is considered when the collaboration pool size is higher than 1. 
+There are three possibilities for calculating the fitness value based on multiple collaborators:
+\begin{itemize}
+	\item optimistic: the fitness of the current individual is the value of its best collaboration,
+	\item hedge: the average value of its collaborations is returned as its fitness score,
+	\item pessimistic: the value of its worst collaboration is assigned to the current individual. 
+\end{itemize}
+An individual is evaluated by forming a number of collaborations according to the collaboration pool size. The collaborators are selected through a strategy corresponding to the collaboration selection pressure. 
+The fitness value to be returned as the individual's performance is assigned according to collaboration credit assignment. 
+
+% \section{Applications of Genetic Programming}
