@@ -7,4 +7,414 @@
 \subsection{Static Environment}
 \subsection{Periodic Tasks}
 \section{Support for Multicriterial Optimization and Cooperative Coevolution}
-\section{FreeRTOS Scheduler Modification}
+\section{Integrating Evolved Scheduling Heuristics into FreeRTOS}
+\subsection{FreeRTOS Task Management}
+FreeRTOS is an open-source real-time operating system designed for embedded systems. 
+Its main features include portability, simplicity of the source code, and binary code compactness. 
+
+The minimum FreeRTOS kernel code is contained in three source files \cite{brown2012architecture}. 
+The code that handles task creating and scheduling is situated in the source file \verb$tasks.c$ and header file \verb$task.h$.
+
+The tasks are managed through the Task Control Block (TCB) structure. 
+A TCB corresponding to each task contains all information necessary to completely describe the task state. 
+The TCB fields include task name, initial priority, unique TCB number and a pointer to the top of the task's stack. 
+When a task is added to a list, it is represented by a pointer to a \verb$ListItem$ object. 
+The TCB structure contains two \verb$ListItem$ objects: \verb$xStateListItem$ and \verb$xGenericListItem$.
+
+A task in FreeRTOS can exist in one of the following states: deleted, suspended, ready, blocked and running. 
+Figure \ref{freertos:state} shows a state diagram for FreeRTOS tasks. 
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.70\textwidth]{images/freertos_fsm.pdf}
+    \caption{State diagram of FreeRTOS tasks.}
+    \label{freertos:state}
+\end{figure}
+
+Task states are tracked implicitly by placing tasks in the appropriate lists: ready list, suspended list, etc. As a task changes state, it is simply moved from one list to another 
+\cite{brown2012architecture}.
+
+A task is created by the \verb$xTaskCreate()$ function. 
+The user-defined parameters required to create a task include: 
+\begin{itemize}
+	\item a pointer to the function that implements the task,
+	\item the task name,
+	\item the depth of the task's stack,
+	\item the task's priority,
+	\item a pointer to any parameters needed by the task function.
+\end{itemize}
+The \verb$xTakCreate()$ first allocates memory for the task's TCB and stack.
+Next, the TCB fields are initialized with the task name, priority and stack depth from function parameters. 
+Finally, a pointer to the top of the task's stack is initialized and the stack is populated with a \textit{dummy frame}. 
+In that way, the task is prepared for its first context switch \cite{goyette2007analysis}.
+
+After all the required tasks have been created, the FreeRTOS scheduler is started by a call to the 
+\verb$vTaskStartScheduler()$ function. 
+First, the Idle task with the lowest priority is created.
+The global timer \verb$xTickCount$ is set to zero. 
+The \verb$vTaskStartScheduler()$ function then passes control to the \verb$xTaskStartScheduler()$ in the Hardware Abstraction Layer (HAL), which configures the timer interrupt needed for invoking the scheduler. 
+The HAL scheduler is also in charge of restoring the context of the currently selected task
+\cite{goyette2007analysis}. 
+
+Newly created tasks are placed into the ready state and added to the ready list. 
+The ready list is implemented as an array of task lists:
+\begin{lstlisting}[frame=none, label={lst:readylist}, caption={Ready task list}, captionpos=b]
+static List_t pxReadyTasksLists[configMAX_PRIORITIES];
+\end{lstlisting}
+The elements of the \verb$pxReadyTasksLists$ array are lists of tasks that have the same priority, from \verb$0$ to \verb$configMAX_PRIORITIES-1$.
+An example of a ready list is shown in figure \ref{freertos:ready}.
+There are three priority levels in the list: task A has priority 0, no tasks have priority 1 and tasks B, C and D have priority 2. 
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.70\textwidth]{images/ready_list.pdf}
+    \caption{A schematic view of the FreeRTOS Ready List. Modified from \cite{brown2012architecture}.}
+    \label{freertos:ready}
+\end{figure}
+When a new task is added to the ready list, its \verb$xStateListItem$ is inserted at the end of the 
+associated priority level list.
+
+A task in the running state is identified by the \verb$pxCurrentTCB$ variable, which is updated at every system tick interrupt. 
+Every time the tick interrupt occurs, the \verb$xTaskSwitchContext()$ function is called and it selects the highest-priority ready task.
+After the highest priority level is determined,
+the highest-priority task is selected by the \verb$listGET_OWNER_OF_NEXT_ENTRY()$ function.
+The function traverses the priority level's ready list and assigns the next ready task to the \verb$pxCurrentTCB$ variable.
+
+The tasks enter the blocked state when they are waiting for time related or synchronization events. 
+A task can be placed into the blocked state by calling the \verb$vTaskDelay()$ and \verb$vTaskDelayUntil()$ API functions. 
+The \verb$vTaskDelayUntil()$ function defines the frequency at which the task is periodically executed and therefore it can be used to implement periodic tasks \cite{carraro2016implementation}.
+The function sets the value of the tick at which the task will activate into the \verb$xStateListItem$ element and places it in the delayed list:
+\begin{lstlisting}[frame=none, label={lst:delay}, caption={Transition to blocked state.}, captionpos=b]
+listSET_LIST_ITEM_VALUE(&(pxCurrentTCB->xStateListItem), 
+						xTimeToWake);
+vListInsert(pxDelayedTaskList, &(pxCurrentTCB->xStateListItem));
+\end{lstlisting}
+The \verb$vListInsert()$ function sorts the elements by the \verb$xStateListItem$ values. 
+At every increment of the tick count, it must be checked whether a task needs to be unblocked. 
+This is implemented in the \verb$xTaskIncrementTick()$ function which is called from the HAL every time the timer interrupt occurs.
+The nearest unblock tick value is stored in the \verb$xNextUnblockTime$ variable, and it corresponds to the unblock time of the first element of the delayed list.
+When the current tick value achieves the \verb$xNextUnblockTime$ value, the first task from the delayed list is retrieved by the \verb$listGET_OWNER_OF_HEAD_ENTRY()$ function.
+The task is placed in the ready list and the function return value signifies that a context switch is needed.
+
+The suspended state is assumed when the \verb$vTaskSuspend()$ API function is called and the tasks are switched back from suspended state by \verb$vTaskResume()$ function.
+
+\subsection{FreeRTOS Scheduler Modification}
+FreeRTOS uses a static priority policy for task scheduling. 
+To achieve dynamic priority assignment, the FreeRTOS task management subsystem must be modified. 
+This is possible by modifying the existing FreeRTOS functions and data structures, but also adding new objects that allow dynamic task priorities to be managed. 
+
+The general idea of implementing a dynamic scheduler is to create a new ready list which contains tasks ordered by a custom parameter defined in \verb$xTaskStateItem$ object.
+In this case, \verb$xTaskStateItem$ shall contain the task priority computed by the evaluated heuristic and the list will be sorted in increasing priority value. 
+The priority of the Idle task is set to some arbitrary value, significantly greater than the other tasks' priorities. 
+
+To determine whether dynamic scheduling based on the evolved heuristic is used, a configuration variable \verb$configUSE_GP_SCHEDULER$ is added to the \verb$FreeRTOSConfig.h$ file. 
+
+As described in the previous sections, the task parameters used for priority computation include the task period, duration, deadline and weight. 
+These parameters need to be added to the TCB structure. 
+Additionally, the task priority value computed by the heuristic is added, as well as the \verb$xRemainingTicks$ variable used for tracing task execution.
+\begin{lstlisting}[frame=none, label={TCB}, caption={Modification of the TCB.}, captionpos=b]
+typedef struct tskTaskControlBlock
+{
+	...
+	#if( configUSE_GP_SCHEDULER == 1 )
+		TickType_t xTaskPeriod;
+		TickType_t xTaskDuration;
+		TickType_t xDeadline;
+		TickType_t xRemainingTicks;
+		double xTaskWeight;
+		double xPriorityValue;
+	#endif
+} tskTCB;
+\end{lstlisting}
+The additional parameters are set through the \verb$xTaskPeriodicCreate()$ function, which is a modified version of the standard \verb$xTaskCreate()$.
+\begin{lstlisting}[frame=none, label={periodicCreate}, caption={The \texttt{xTaskPeriodicCreate()} function prototype.}, captionpos=b]
+BaseType_t xTaskPeriodicCreate(	TaskFunction_t pxTaskCode,
+						const char * const pcName,		
+						const configSTACK_DEPTH_TYPE usStackDepth,
+						void * const pvParameters,
+						UBaseType_t uxPriority,
+						TaskHandle_t * const pxCreatedTask,
+						TickType_t period,
+						TickType_t duration,
+						uint32_t weight ) PRIVILEGED_FUNCTION
+\end{lstlisting}
+The user-defined parameters are added to the new task's TCB structure. 
+\begin{lstlisting}[frame=none, label={TCB_params}, caption={Adding the user-defined task parameters to the TCB structure.}, captionpos=b]
+pxNewTCB->xTaskPeriod = period;
+pxNewTCB->xTaskDuration = duration;
+pxNewTCB->uTaskWeight = weight;
+pxNewTCB->xDeadline= period;
+pxNewTCB->xRemainingTicks = duration;
+\end{lstlisting}
+After the task priority value is computed, this value is assigned to the task's \\\verb$xStateListItem$ element. 
+\begin{lstlisting}[frame=none, label={init_priority}, caption={Assigning the task priority to the \texttt{xStateListItem} element.}, captionpos=b]
+vTaskComputePriority( pxNewTCB );
+listSET_LIST_ITEM_VALUE( &((pxNewTCB)->xStateListItem), 
+						(pxNewTCB)->xPriorityValue );
+\end{lstlisting}
+Next, the new ready tasks list must be declared.
+\begin{lstlisting}[frame=none, label={ready_list}, caption={Declaration of the new ready tasks list.}, captionpos=b]
+#if( configUSE_GP_SCHEDULER == 1 )
+	PRIVILEGED_DATA static List_t xReadyTasksListGP;
+#endif /* configUSE_GP_SCHEDULER */
+\end{lstlisting}
+Before adding a task to the ready list, its priority value is computed. 
+Since the Idle task is added to the ready list in the same way as other tasks, it has to be distinguished in some manner. 
+While creating the Idle task, its duration is set to 0.
+Therefore, before assigning a priority value to a task, its duration value is checked. 
+An example of the priority computation according to an arbitrary heuristic is given in the following code listing. 
+In this example, priority is computed according to the expression:
+\begin{align*}
+p_i = d_i + c_i + max\{ d_i - c_i - current\_time, 0 \}.
+\end{align*}
+The Idle task priority is set to 1000.
+\begin{lstlisting}[frame=none, label={ready_list}, caption={Macro function for priority computation.}, captionpos=b]
+#define vTaskComputePriority( pxTCB )
+{
+	pxTCB->xPriorityValue = ( pxTCB->xTaskDuration != 0 ) ? 
+		( pxTCB->xDeadline + pxTCB->xTaskDuration + 
+		max( pxTCB->xDeadline - pxTCB->xTaskDuration, 0 )) : 1000;
+}	
+\end{lstlisting}
+The \verb$prvAddTaskToReadyList()$ function is modified in a way that the \verb$vListInsert()$ method is used instead of \verb$vListInsertEnd()$. 
+The elements are sorted by the \\\verb$xStateListItem$ element, so the lowest priority tasks are placed at the beginning of the list. 
+\begin{lstlisting}[frame=none, label={ready_add}, caption={Adding a new task to the ready list.}, captionpos=b]
+#if ( configUSE_GP_SCHEDULER == 1 )
+	#define prvAddTaskToReadyList( pxTCB )
+	{
+		vTaskComputePriority( pxTCB );
+		listSET_LIST_ITEM_VALUE( &((pxTCB)->xStateListItem), 
+								(pxTCB)->xPriorityValue );
+		vListInsert(&(xReadyTasksListGP), 
+					&((pxTCB)->xStateListItem) );
+	}																								
+#else 																								
+	#define prvAddTaskToReadyList( pxTCB )
+	{
+		vListInsertEnd(&(pxReadyTasksLists[(pxTCB)->uxPriority] ), 
+						&((pxTCB)->xStateListItem));
+	}
+#endif
+\end{lstlisting}
+The \verb$prvInitialiseTaskLists()$ must be called in order to initialise the elements of the ready tasks list.
+\begin{lstlisting}[frame=none, label={ready_list}, caption={Declaration of the new ready tasks list.}, captionpos=b]
+#if( configUSE_GP_SCHEDULER == 1 )
+	vListInitialise( &(xReadyTasksListGP) );
+#endif /* configUSE_GP_SCHEDULER */
+\end{lstlisting}
+When a new task is added to the ready list while the scheduler is not running, its priority value is compared to the priority of the running task. 
+If the new task has a higher priority, it is set as the currently running task.
+Therefore, a modification in the \verb$prvAddNewTaskToReadyList()$ function is required in order to include the comparison between computed priority values. 
+\begin{lstlisting}[frame=none, label={newtask}, caption={Modification of the \texttt{prvAddNewTaskToReadyList()} function.}, captionpos=b]
+#if( configUSE_GP_SCHEDULER == 1 )
+	vListInitialise( &(xReadyTasksListGP) );
+#endif /* configUSE_GP_SCHEDULER */
+\end{lstlisting}
+The \verb$vTaskStartScheduler()$ is also modified in order to manage the creation of the Idle task.
+\begin{lstlisting}[frame=none, label={idle}, caption={Creation of the Idle task.}, captionpos=b]
+#if( configUSE_GP_SCHEDULER == 1 )
+{
+	xReturn = xTaskPeriodicCreate( prvIdleTask,
+					configIDLE_TASK_NAME,
+					configMINIMAL_STACK_SIZE,
+					( void* ) NULL,
+					( tskIDLE_PRIORITY | portPRIVILEGE_BIT ),
+					&xIdleTaskHandle,
+					0,
+					0,
+					0 );
+}
+#else 
+	...
+\end{lstlisting}
+The \verb$vTaskSwitchContext()$ function is modified in a way that it selects the first element of the ready list as the currently running task, instead of calling the \\\verb$taskSELECT_HIGHEST_PRIORITY_TASK()$ function.
+\begin{lstlisting}[frame=none, label={switchcontext}, caption={\texttt{vTaskSwitchContext()} modification.}, captionpos=b]
+#if( configUSE_GP_SCHEDULER == 1 )
+{
+	pxCurrentTCB =
+		(TCB_t *)listGET_OWNER_OF_HEAD_ENTRY(&(xReadyTasksListGP));
+}
+#else 
+{
+	taskSELECT_HIGHEST_PRIORITY_TASK();
+}
+#endif
+\end{lstlisting} 
+Since absolute deadline value is required for priority computation, this parameter must be updated at each end of a task instance.
+If the \verb$xRemainingTicks$ variable reached zero before the task is switched out, \verb$xDeadline$ parameter is updated.
+\begin{lstlisting}[frame=none, label={taskfinish}, caption={\texttt{Updating the \texttt{xDeadline} parameter at the end of task instance}.}, captionpos=b]
+#if( configUSE_GP_SCHEDULER == 1 )
+{
+	if( pxCurrentTCB->xRemainingTicks == 0 ) 
+	{
+		pxCurrentTCB->xRemainingTicks = 
+			pxCurrentTCB->xTaskDuration;
+		pxCurrentTCB->xDueDate += pxCurrentTCB->xTaskPeriod;
+	}
+}
+#endif
+\end{lstlisting}
+Finally, the last modifications are applied to the \verb$xTaskIncrementTick()$ function. 
+The previous subsection described how a task is unblocked and placed into the ready list.
+When a task is blocked, its \verb$xStateListItem$ element refers to the unblock tick value. 
+Therefore, before placing an unblocked task into the ready list, its \verb$xStateListItem$ element must be assigned to the priority value.
+Priority of the unblocked task is compared to the running task's priority in order to determine whether a context switch is needed.
+Hence, the priority of the task in running state is also updated.
+\begin{lstlisting}[frame=none, label={switchcontext}, caption={Managing an unblocked task.}, captionpos=b]
+#if( configUSE_GP_SCHEDULER == 1 )
+{
+	vTaskComputePriority( pxTCB );
+	listSET_LIST_ITEM_VALUE( &((pxTCB)->xStateListItem), 
+							pxTCB->xPriorityValue );
+	vaskComputePriority( pxCurrentTCB );
+}
+#endif
+\end{lstlisting}
+
+\subsection{Testing and Results}
+Modification of the FreeRTOS kernel was tested on a FreeRTOS simulator for Linux systems which uses POSIX threads.
+The test application creates multiple tasks with diverse period, duration and weight parameters. 
+A code example for a periodic task is given in the following listing.
+CPU utilization is simulated by the \verb$count$ variable whose inital value corresponds to the task processing time. 
+The variable is decremented at every system tick and when it reaches zero, the \verb$vTaskDealyUntil()$ function is called. 
+\begin{lstlisting}[frame=none, label={switchcontext}, caption={Task function simulating a periodic task.}, captionpos=b]
+void TSK_A( void *pvParameters ) {
+    TickType_t xLastWakeTimeA;
+    const TickType_t xFrequency = PERIOD_A;
+    TickType_t count = DURATION_A;
+
+    TickType_t xNextTime;
+    TickType_t xTime;
+    xLastWakeTimeA = 0;
+    
+    for(;;) {
+        xTime= xTaskGetTickCount();
+        //While loop that simulates task duration
+        while(count != 0) {
+            if((xNextTime = xTaskGetTickCount()) > xTime) {
+                count--;
+                xTime = xNextTime;
+            }
+        }
+        count = DURATION_A;
+        vTaskDelayUntil(&xLastWakeTimeA, xFrequency);
+    }
+}
+\end{lstlisting}
+Events of interest - tick increments and context switches are monitored by using trace macros. 
+The following trace macros were implemented:
+\begin{itemize}
+	\item \verb$traceTASK_INCREMENT_TICK( xTickCount )$,
+	\item \verb$traceTASK_SWITCHED_IN()$,
+	\item \verb$traceTASK_SWITCHED_OUT()$.
+\end{itemize}
+The \verb$traceTASK_INCREMENT_TICK()$ macro is called during the tick interrupt.
+During a context switch, the \verb$traceTASK_SWITCHED_IN()$ macro contains the handle of the task about to enter the running state, while the \verb$traceTASK_SWITCHED_OUT()$ contains the handle of the task about to leave the running state \cite{freertosref}. 
+
+For tracing the total tardiness in overload conditions, a global variable \verb$xTardiness$ is used.
+The tardiness value is updated every time a task execution is finished.
+\begin{lstlisting}[frame=none, label={tardiness}, caption={Updating the \texttt{xTardiness} variable.}, captionpos=b]
+#if( configTRACE_TARDINESS == 1 )
+{
+	if( pxCurrentTCB->xDeadline < xTickCount )
+	{
+		xTardiness += ( xTickCount - pxCurrentTCB->xDeadline ) 
+			* pxCurrentTCB->xTaskWeight;
+	}
+}
+#endif
+\end{lstlisting}
+
+The scheduler was tested on a single task set under overload condition. 
+The results will be presented through three examples with different priority calculation heuristics.
+
+The considered task set is given in the following table.
+\newpage
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|
+>{\columncolor[HTML]{FFFFFF}}c |c|c|c|}
+\hline
+   & \cellcolor[HTML]{FFFFFF}\textbf{$T_i$} & \cellcolor[HTML]{FFFFFF}\textbf{$c_i$} & \cellcolor[HTML]{FFFFFF}\textbf{$w_i$} \\ \hline
+\textbf{$\tau_1$} & 8                         & 6                      & 0.5   \\ \hline
+\textbf{$\tau_2$} & 5                         & 2                      & 1     \\ \hline
+\end{tabular}
+\end{center}
+\end{table}
+The total utilization factor for the given set equals:
+\begin{equation*}
+\sum_{i=1}^{N}\frac{c_i}{T_i} = \frac{6}{8} + \frac{2}{5} = 1.15.
+\end{equation*}
+
+The schedule for the following task set provided by FreeRTOS default scheduler is shown in figure \ref{freertos_def}.
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/freertos_default_1.pdf}
+    \caption{A schedule produced by the default FreeRTOS scheduler.}
+    \label{freertos_def}
+\end{figure}
+Both tasks are assigned equal priorities. 
+Task $\tau_1$ is the first task to be executed, since it was last added to the ready list. 
+The instances of task $\tau_1$ start executing every time task $\tau_1$ is unblocked: $t=8$, $t=16$, $t=24$, $t=32$.
+Task $\tau_2$ instances are executed while task $\tau_1$ is in the blocked state, since the activation of task $\tau_2$ is ignored while task $\tau_1$ is executing.
+Therefore, every instance of task $\tau_2$ completes after its deadline. 
+The total tardiness of task $\tau_2$ equals 44.
+
+If task weight values are taken into account, the task priorities need to be set in a way that a task with a higher weight value has a higher priority.
+In this example, task weight values are scaled by 2 in order to get integer priority values.
+Figure \ref{freertos_def_2} shows a schedule produced with task $\tau_2$ priority set to 2 and task $\tau_1$ priority set to 1. 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/freertos_default.pdf}
+    \caption{A schedule produced by the default FreeRTOS scheduler with task weights taken into account.}
+    \label{freertos_def_2}
+\end{figure}
+In this example, task $\tau_2$ instances execute as soon as possible because it has a higher priority.
+Task $\tau_1$ executes after task $\tau_2$ is switched to blocked state.
+Upon the activation of task $\tau_2$, a context switch is performed, giving advantage to task $\tau_2$.
+The total weighted tardiness of task $\tau_1$ instances equals 10.
+
+The results of adding priority function to the scheduler will be presented through three examples.
+In the first example, the task priority corresponds to the task deadline.
+The result is shown in figure \ref{freertos_1}. 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/freertos_edf.pdf}
+    \caption{A schedule produced by a modification of FreeRTOS scheduler, heuristic $p_i = d_i$.}
+    \label{freertos_edf}
+\end{figure}
+Higher priority is given to the task instances with earliest deadline.
+This heuristic is equivalent to the EDF algorithm.
+Total tardiness of task $\tau_1$ is 8, while the $\tau_2$ tardiness equals 6.
+The total weighted tardiness for this example equals 10.
+
+In the second example, a heuristic evolved by genetic programming is used as the priority function.
+The task's processing time is added to the priority function: $p_i = d_i + c_i$.
+The produced schedule is depicted in Figure \ref{freertos_1}.
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/freertos_heur1.pdf}
+    \caption{A schedule produced by a modification of FreeRTOS scheduler, heuristic $p_i = d_i + c_i$.}
+    \label{freertos_1}
+\end{figure}
+Priority ties are broken in favor of the task that is already executing.
+An example of such situation is time instant $t=15$ where both task $\tau_1$ and $\tau_2$ have the same priority value, $22$.
+As total weighted tardiness value is used as a penalty function for heuristics evolution, the produced schedule results in no late instances of the task with greater weight value.
+The total tardiness of task $\tau_1$ equals 14, so the total weighed tardiness for this example is 7.
+
+In the last example, a more complex heuristic is used as the priority function.
+The task priorities are computed according to the expression:
+\begin{align*}
+p_i = d_i - SL \cdot \frac{c_i}{w_i}.
+\end{align*}
+Task priority is proportional to due date, but it takes the positive slack and weight value into account.
+Advantage is given to the tasks with earliest due date and gratest positive slack value.
+The result is shown in Figure \ref{freertos_2}.
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/freertos_heur2.pdf}
+    \caption{A schedule produced by a modification of FreeRTOS scheduler, heuristic $p_i = d_i - SL \cdot c_i / w_i$.}
+    \label{freertos_2}
+\end{figure}
+Again, the task of greater weight value has no late instances.
+The total tardiness of task $\tau_1$ equals $16$, thus the total weighted tardiness for this example equals $8$.

@@ -3,6 +3,24 @@
 \usepackage{enumitem}
 \usepackage{algorithm}
 \usepackage{algorithmic}
+\usepackage{verbatim}
+\usepackage[table,xcdraw]{xcolor}
+
+\usepackage{listings}
+\lstset{
+    language=C,
+    basicstyle=\fontsize{11}{13}\ttfamily,
+    % numbers=left,
+    frame=single,
+    % numberstyle=\tiny,
+    showstringspaces=false,
+    tabsize=4
+}
+
+\usepackage{color}
+\definecolor{bluekeywords}{rgb}{0.13,0.13,1}
+\definecolor{greencomments}{rgb}{0,0.5,0}
+\definecolor{redstrings}{rgb}{0.9,0,0}
 
 \newtheorem{mydef}{Definition}
 
@@ -26,12 +44,14 @@
 \zahvala{}
 
 \tableofcontents
+\listoffigures
+% \lstlistoflistings
 
 \include{chapters/introduction}
 \include{chapters/genprog}
 \include{chapters/fm}
 \include{chapters/implementation}
-\include{chapters/results}
+% \include{chapters/results}
 \include{chapters/conclusion}
 
 \bibliography{literatura}
