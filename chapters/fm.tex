@@ -1,8 +1,122 @@
 \chapter{Formal Methods of Scheduling Overloaded Real-Time Systems}
-%%%% TODO ovdje pisati o podjeli zadataka na firm, soft, hard???
-Overload condition in real-time task scheduling is a critical situation in which the computational demand requested by the task set exceeds the processor capacity, and hence not all tasks can complete within their deadlines 
-\cite{lee2007handbook}.
-Such conditions may occur due to bad system design, simultaneous arrival of "unexpected" events, malfunctioning of input devices, operating system exceptions and so on.
+\section{General approach for task scheduling}
+The timing behavior of a real-time system is analyzed by modelling all software activities running in the processor as a set of $n$ real-time tasks: $T = \{\tau_1, \tau_2, ..., \tau_n\}$.
+A task $\tau_i$ is considered as an infinite sequence of instances, or jobs $\tau_{i,j}$.
+A task is said to be periodic if all its jobs are released one after the other with an interval $T_i$ called the task period.
+% Each job has a computation time $c_{i,j}$, a release time $r_{i,j}$ and an absolute deadline $d_{i, j}$\cite{lee2007handbook}.
+% For simplicity, all jobs of the same task are assumed to have the same computation time and relative deadline, which will be denoted in the following text as $c_i$ and $d_i$, respectively.
+
+The operation of allocating the CPU to a selected task is referred to as \textit{dispatching}.
+A set of rules that determines the selection of a task to be executed at current time is called a 
+\textit{scheduling algorithm}.
+The scope of this work considers scheduling various sets of concurrent periodic tasks which execute on a single processor.
+The formal definition of a schedule is stated in the following text.
+\begin{mydef}
+A schedule is defined as a function $\sigma : \mathbb{R}^{+} \rightarrow \mathbb{N}$ such that 
+$\forall t \in \mathbb{R}^{+}, \exists t_1, t_2$ such that $t \in [\, t_1, t_2 \rangle$ and 
+$\forall t' \exists [\, t_1, t_2 \rangle \sigma(t) = \sigma(t')$.
+\end{mydef}
+In other words, $\sigma(t)$ is an integer step function and $\sigma(t) = k$, with $k > 0$, means that task $J_k$ is is executing at time $t$, while $\sigma(t) = 0$ means that the CPU is idle.
+An example of a schedule function is shown in figure \ref{schedule_function}.
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/sched_function.pdf}
+    \caption{Schedule obtained by executing tasks $J_1$, $J_2$ and $J_3$. Modified from \cite{buttazzo2011hard}.}
+    \label{schedule_function}
+\end{figure}
+
+A schedule is said to be \textit{feasible} if all tasks can be completed according to a set of specific constraints.
+A set of tasks is said to be \textit{schedulable} if there exists at least one algorithm that can produce a feasible schedule.
+
+\subsection{Timing Constraints of Real-Time Tasks}
+In this work, the timing constraints of the tasks are of interest, specifically the task deadlines.
+A deadline represents the time before which a task should complete its execution without causing any damage to the system.
+A deadline specified with resprect to the task arrival time is called an \textit{absolute deadline}, whereas a deadline specified with resprect to time zero is called a \textit{relative deadline}.
+The timing parameters characterizing a real-time task $\tau_i$ are the following:
+\begin{itemize}
+    \item arrival time $a_i$ - the time at which a task becomes ready for execution,
+    \item computation time $c_i$ - the CPU time necessary for executing the task without interruption,
+    \item absolute deadline $d_i$ - the time before which a task should be completed to avoid damage to the system,
+    \item start time $s_i$ - the time at which a task starts its execution,
+    \item finish time $f_i$ - the time at which a task finishes its execution.
+\end{itemize}
+The timing parameters of a task are illustrated in Figure \ref{task_timing}.
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/task_timing.pdf}
+    \caption{Timing parameters of a real-time task.}
+    \label{task_timing}
+\end{figure}
+The task lateness represents the delay of a task completion with respect to its deadline:
+\begin{align*}
+L_i = f_i - d_i.
+\end{align*}
+If a task completes before the deadline, its lateness is negative.
+A parameter which considers task completion after the deadline is the task tardiness - the amount of time a task stays active after its deadline:
+\begin{align*}
+E_i = max( 0, L_i ).
+\end{align*}
+
+Task importance is specified through a value parameter, associated with each task.
+Depending on particular application, task value may be directly related to task parameters such as computation time or deadline value, but can also be set to an arbitary value. 
+The value associated with a task as a function of its completion time is called a \textit{utility function}.
+Utility function is used to describe the benefit of executing a task depending on the time at which the task is completed in relation to the task deadline.
+Depending on the consequences of a missed deadline, real-time tasks are usually distinguished in four categories \cite{buttazzo2011hard}:
+\begin{itemize}
+    \item non real-time tasks,
+    \item soft real-time tasks,
+    \item firm real-time tasks,
+    \item hard real-time tasks.
+\end{itemize}
+The typical utility functions differ for the stated categories and are shown in Figure \ref{utility}.
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/task_value.pdf}
+    \caption{Utility functions for different categories of real-time tasks.}
+    \label{utility}
+\end{figure}
+Non real-time tasks do not have deadlines. The task value is proportional to the task importance and it does not depend on the completion time.
+For soft real-time tasks, the task value is constant if the task finishes before its deadline, but it decreases with the exceeding time. 
+Thus, a soft deadline is not critical, but missing the deadline causes performance degradation.
+In the case of firm real-time tasks, executing a task after its deadline brings no benefit for the system - the utility function is zero after the deadline. However, missing the deadline does not cause any damage to the system.
+Hard real-time tasks must complete before their deadline. Missing the deadline may cause catastrophic consequences on the system.
+
+\subsection{Classification of Scheduling Algorithms}
+The algorithms for scheduling real-time tasks proposed in literature can be classified by the following criterions \cite{buttazzo2011hard}:
+\begin{itemize}
+    \item support for preemption,
+    \item static / dynamic algorithms,
+    \item offline / online usage,
+    \item optimal / heuristic.
+\end{itemize}
+In preemtive algorithms, the running task can be interrupted at any time to assign the processor to another active task of higher priority.
+On the other hand, in non-preemptive algorithms a task is executed until completion, without being interrupted. 
+All scheduling decisions are taken as the task terminates its execution.
+Static algorithms are those in which scheduling decisions are based on fixed parameters, assigned to tasks before their activation.
+In dynamic algorithms, the task parameters are assigned dynamically during execution.
+A scheduling algorithm is used offline if it is generated before tasks activation. 
+The generated algorithm is stored and executed by a dispatcher.
+Online scheduling algorithms make scheduling decisions every time a new task enters the system or when a running task terminates.
+An algorithm is said to be optimal if it minimizes some given cost function defined over the task set. 
+When no cost function is defined, an algorithm is optimal if it is able to find a feasible schedule.
+An algorithm is heuristic if it is guided by a heuristic function in taking its scheduling decisions. 
+It tends toward the optimal schedule, but it does not guarantee finding it \cite{buttazzo2011hard}.
+
+\subsection{Task Management in Real-Time Systems}
+A task competing for CPU time is called an \textit{active} task.
+If an active task is currently executing, it is referred to as the \textit{running} task.
+The other tasks waiting for CPU time are in the \textit{ready} state and are kept in the \textit{ready queue}.
+Figure \ref{ready_queue} shows a schematic view of the ready queue.
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/ready_queue.pdf}
+    \caption{Queue of ready tasks waiting for execution. Modified from \cite{buttazzo2011hard}.}
+    \label{ready_queue}
+\end{figure}
+In operating systems that allow dynamic activation, the running task can be interrupted at any moment if a more important task arrives in the system.
+CPU is assigned to the most important ready task, while the running task is inserted in the ready queue.
+This operation is called \textit{preemption}.
+Preemption usually increases the efficiency of the schedule in a sense that it allows executing real-time task sets with higher processor utilization \cite{buttazzo2011hard}.
 
 In standard queueing theory, system load $\rho$ represents the expected number of job arrivals per mean service time. 
 In a system consisting of preemptable periodic tasks with implicit deadlines, system load is equivalent to the processor utilization factor:
@@ -10,17 +124,11 @@ In a system consisting of preemptable periodic tasks with implicit deadlines, sy
 \rho = U = \sum_{i=1}^{n}\frac{C_i}{T_i},
 \end{equation*}
 where $C_i$ is the computation time and $T_i$ is the period of task $\tau_i$.
-If load value is greater than one, the task set is non-schedulable because the total computation time requested by the periodic tasks exceeds the available processor time.
-
-% When an overload condition occurs, it is inevitable that one or more task miss their deadlines. 
-% Therefore, it is preferable that those tasks are of less importance than the ones that can complete successfully. 
-% Task importance is specified through a value parameter, associated with each task.
-% Depending on particular application, task value may be directly related to task parameters such as computation time or deadline value, but can also be set to an arbitary value. 
-% Task values in real-time systems often depend on the time at which the task is executed, so the task importance can be described by an utility function 
-% \cite{buttazzo2011hard}. 
-% Utility function properties depend on task types. 
-% Utility functions differ for single task types, as shown in figure \ref{utiliy_fcn}.
-% Methods of handling overload conditions presented in this work consider firm real-time tasks that give an insignificant contribution if completed after their deadline.
+If load value is greater than one, the task set is non-schedulable because the total computation demand requested by the periodic tasks exceeds the available processor capacity.
+Hence, not all tasks can complete within their deadlines.
+This condition in real-time task scheduling is called an \textit{overload condition}.
+System overload may occur due to bad system design, simultaneous arrival of "unexpected" events, malfunctioning of input devices, operating system exceptions and so on.
+Methods of handling overload conditions presented in this chapter consider firm real-time tasks.
 
 \section{Transient Overload}
 Transient overload occurs for a limited duration, in a system with the average load less or equal to one.
