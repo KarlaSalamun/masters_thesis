@@ -1,4 +1,148 @@
 \chapter{Results}
 \section{Comparison of Formal Methods and Genetic Programming}
 \section{Comparison of Implemented Framework and ECF Framework}
-\section{Solution Testing on a Hardware}
+\section{Testing the FreeRTOS Modification}
+Modification of the FreeRTOS kernel was tested on a FreeRTOS simulator for Linux systems which uses POSIX threads.
+The test application creates multiple tasks with diverse period, duration and weight parameters. 
+A code example for a periodic task is given in the following listing.
+CPU utilization is simulated by the \verb$count$ variable whose inital value corresponds to the task processing time. 
+The variable is decremented at every system tick and when it reaches zero, the \verb$vTaskDealyUntil()$ function is called. 
+\begin{lstlisting}[frame=none, label={switchcontext}, caption={Task function simulating a periodic task.}, captionpos=b]
+void TSK_A( void *pvParameters ) {
+    TickType_t xLastWakeTimeA;
+    const TickType_t xFrequency = PERIOD_A;
+    TickType_t count = DURATION_A;
+
+    TickType_t xNextTime;
+    TickType_t xTime;
+    xLastWakeTimeA = 0;
+    
+    for(;;) {
+        xTime= xTaskGetTickCount();
+        //While loop that simulates task duration
+        while(count != 0) {
+            if((xNextTime = xTaskGetTickCount()) > xTime) {
+                count--;
+                xTime = xNextTime;
+            }
+        }
+        count = DURATION_A;
+        vTaskDelayUntil(&xLastWakeTimeA, xFrequency);
+    }
+}
+\end{lstlisting}
+Events of interest - tick increments and context switches are monitored by using trace macros. 
+The following trace macros were implemented:
+\begin{itemize}
+	\item \verb$traceTASK_INCREMENT_TICK( xTickCount )$,
+	\item \verb$traceTASK_SWITCHED_IN()$,
+	\item \verb$traceTASK_SWITCHED_OUT()$.
+\end{itemize}
+The \verb$traceTASK_INCREMENT_TICK()$ macro is called during the tick interrupt.
+During a context switch, the \verb$traceTASK_SWITCHED_IN()$ macro contains the handle of the task about to enter the running state, while the \verb$traceTASK_SWITCHED_OUT()$ contains the handle of the task about to leave the running state \cite{freertosref}. 
+
+For tracing the total tardiness in overload conditions, a global variable \verb$xTardiness$ is used.
+The tardiness value is updated every time a task execution is finished.
+\begin{lstlisting}[frame=none, label={tardiness}, caption={Updating the \texttt{xTardiness} variable.}, captionpos=b]
+#if( configTRACE_TARDINESS == 1 )
+{
+	if( pxCurrentTCB->xDeadline < xTickCount )
+	{
+		xTardiness += ( xTickCount - pxCurrentTCB->xDeadline ) 
+			* pxCurrentTCB->xTaskWeight;
+	}
+}
+#endif
+\end{lstlisting}
+
+The scheduler was tested on a single task set under overload condition. 
+The results will be presented through three examples with different priority calculation heuristics.
+The considered task set is given in the following table.
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{|
+>{\columncolor[HTML]{FFFFFF}}c |c|c|c|}
+\hline
+   & \cellcolor[HTML]{FFFFFF}\textbf{$T_i$} & \cellcolor[HTML]{FFFFFF}\textbf{$c_i$} & \cellcolor[HTML]{FFFFFF}\textbf{$w_i$} \\ \hline
+\textbf{$\tau_1$} & 8                         & 6                      & 0.5   \\ \hline
+\textbf{$\tau_2$} & 5                         & 2                      & 1     \\ \hline
+\end{tabular}
+\end{center}
+\end{table}
+The total utilization factor for the given set equals:
+\begin{equation*}
+\sum_{i=1}^{N}\frac{c_i}{T_i} = \frac{6}{8} + \frac{2}{5} = 1.15.
+\end{equation*}
+
+The schedule for the following task set provided by the FreeRTOS default scheduler is shown in figure \ref{freertos_def}.
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/freertos_default_1.pdf}
+    \caption{A schedule produced by the default FreeRTOS scheduler.}
+    \label{freertos_def}
+\end{figure}
+Both tasks are assigned equal priorities. 
+Task $\tau_1$ is the first task to be executed, since it was last added to the ready list. 
+The instances of task $\tau_1$ start executing every time task $\tau_1$ is unblocked: $t=8$, $t=16$, $t=24$, $t=32$.
+Task $\tau_2$ instances are executed while task $\tau_1$ is in the blocked state, since the activation of task $\tau_2$ is ignored while task $\tau_1$ is executing.
+Therefore, every instance of task $\tau_2$ completes after its deadline. 
+The total tardiness of task $\tau_2$ equals 44.
+
+If task weight values are taken into account, the task priorities need to be set in a way that a task with a higher weight value has a higher priority.
+In this example, task weight values are scaled by 2 in order to get integer priority values.
+Figure \ref{freertos_def_2} shows a schedule produced with task $\tau_2$ priority set to 2 and task $\tau_1$ priority set to 1. 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/freertos_default.pdf}
+    \caption{A schedule produced by the default FreeRTOS scheduler with task weights taken into account.}
+    \label{freertos_def_2}
+\end{figure}
+In this example, task $\tau_2$ instances execute as soon as possible because it has a higher priority.
+Task $\tau_1$ executes after task $\tau_2$ is switched to blocked state.
+Upon the activation of task $\tau_2$, a context switch is performed, giving advantage to task $\tau_2$.
+The total weighted tardiness of task $\tau_1$ instances equals 10.
+
+The results of adding priority function to the scheduler will be presented through three examples.
+In the first example, the task priority corresponds to the task deadline.
+The result is shown in figure \ref{freertos_1}. 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/freertos_edf.pdf}
+    \caption{A schedule produced by a modification of FreeRTOS scheduler, heuristic $p_i = d_i$.}
+    \label{freertos_edf}
+\end{figure}
+Higher priority is given to the task instances with earliest deadline.
+This heuristic is equivalent to the EDF algorithm.
+Total tardiness of task $\tau_1$ is 8, while the $\tau_2$ tardiness equals 6.
+The total weighted tardiness for this example equals 10.
+
+In the second example, a heuristic evolved by genetic programming is used as the priority function.
+The task's processing time is added to the priority function: $p_i = d_i + c_i$.
+The produced schedule is depicted in Figure \ref{freertos_1}.
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/freertos_heur1.pdf}
+    \caption{A schedule produced by a modification of FreeRTOS scheduler, heuristic $p_i = d_i + c_i$.}
+    \label{freertos_1}
+\end{figure}
+Priority ties are broken in favor of the task that is already executing.
+An example of such situation is time instant $t=15$ where both task $\tau_1$ and $\tau_2$ have the same priority value, $22$.
+As total weighted tardiness value is used as a penalty function for heuristics evolution, the produced schedule results in no late instances of the task with greater weight value.
+The total tardiness of task $\tau_1$ equals 14, so the total weighed tardiness for this example is 7.
+
+In the last example, a more complex heuristic is used as the priority function.
+The task priorities are computed according to the expression:
+\begin{align*}
+p_i = d_i - SL \cdot \frac{c_i}{w_i}.
+\end{align*}
+Task priority is proportional to due date, but it takes the positive slack and weight value into account.
+Advantage is given to the tasks with earliest due date and gratest positive slack value.
+The result is shown in Figure \ref{freertos_2}.
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/freertos_heur2.pdf}
+    \caption{A schedule produced by a modification of FreeRTOS scheduler, heuristic $p_i = d_i - SL \cdot c_i / w_i$.}
+    \label{freertos_2}
+\end{figure}
+Again, the task of greater weight value has no late instances.
+The total tardiness of task $\tau_1$ equals $16$, thus the total weighted tardiness for this example equals $8$.

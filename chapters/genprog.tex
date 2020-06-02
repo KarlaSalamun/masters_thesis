@@ -26,7 +26,7 @@ If the function $f$ is not strictly convex, the existance of one or more local o
 Solution $\textbf{x}^{*}$ is a local optimum if and only if the solution $\textbf{x}^{*}$ belongs to the feasible solution space and if for every other solution $\textbf{x}$ such that 
 $\delta > 0, |\textbf{x} - \textbf{x}^{*}| \leq \delta$, the condition $f(\textbf{x}^{*}) \geq f(\textbf{x})$ is fulfilled.
 
-If an optimization algorithm deterministically chooses the better solution than the current solution, the solutions converge towards the local optimum and the algorithm yields the wrong result.
+If an optimization algorithm deterministically chooses the better solution than the current solution, the solutions generally converge towards the local optimum and the algorithm yields the wrong result.
 One possible solution to this problem is searching the solution space in bigger steps.
 Another method is stochastically accepting that solutions that are worse than the current solution.
 
