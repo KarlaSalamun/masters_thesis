@@ -171,6 +171,17 @@ The subtree replacement is performed by the \texttt{replace\_random} method impl
 This method takes a pointer to a newly created subtree and replaces a random child at a random depth with the subtree.
 
 \section{Heuristics Evaluation}
+Evaluation of all the individuals in the population is performed in each generation.
+In this work, the fitness function corresponds to the mean skip factor of all tasks.
+To achieve a schedule with a maximum number of consecutive completed tasks (with minumum number of skipped tasks), the fitness function must be maximized.
+
+A method in charge of evaluating an individual and returning its fitness value is the \texttt{get\_value} method, implemented in the \texttt{GPEvaluateHeuristic} class.
+This method loads the training task set from a file and sets the individual's genotype as the priority function.
+The individual is evaluated by running a simulation of training tasks execution and scheduling the tasks according to the individual's genotype.
+Simulation time is set equal to the hyperperiod corresponding to the train task set.
+The number of skipped instances is tracked for each task.
+The fitness value is computed by calculating the mean skip factor of each task and scaling it by the total number of tasks.
+
 \subsection{Periodic Tasks Simulator}
 In this work, the tasks are represented as objects of class \texttt{Task}.
 The following parameters are set through the constructor:
@@ -199,7 +210,148 @@ The states of the following instances are set by the \texttt{update\_rb\_params(
 If the skipover model is not being used, the task tardiness is tracked.
 The tardiness value of a task is updated upon the end of the task execution through the \texttt{update\_tardiness()} method.
 
+At the beginning of the simulation, the tasks are initialized and stored in the \texttt{pending} vector.
+The \texttt{running} variable which stores the task in the running state is set to \texttt{NULL}.
+The \texttt{pending} list is iterated to check whether a task is ready for execution.
+This is done by the \texttt{isReady} method which compares the task activation time with current simulation time.
+If a task is ready, it is placed in the \texttt{ready} vector.
+The priorities of the ready tasks are computed by running the \texttt{execute()} method on the evaluated genotype.
+The context needed by the \texttt{execute()} method includes the object which describes the current task, a vector of pending tasks and a vector of processed tasks.
+The object and vectors are stored in the \texttt{task\_ctx} structure and passed to the \texttt{execute()} method by a void pointer.
+The computed priority is stored in the \texttt{priority} member variable of the \texttt{Task} object.
+
+The scheduler is invoked at every time instance when the \texttt{ready} list is not empty and it assigns the highest priority task to the \texttt{running} variable.
+Function which performs dispatching is implemented in a separate class and its complete source code is shown in code listing \ref{sched1}.
+\begin{lstlisting}[frame=none, label={sched1}, caption={The \texttt{schedule\_next} method.}, captionpos=b]
+void Scheduler::schedule_next( std::vector<Task *> &ready, 
+	Task *&running )
+{
+    std::sort( ready.begin(), ready.end(),
+        []( const Task *a, const Task *b ) -> 
+            bool{ return a->get_priority() < b->get_priority();});
+
+    if( running ) {
+        if ( preempt( ready[0], running ) ) {
+            running->isPreempted = true;
+            std::swap( ready[0], running );
+        }
+    }
+    else {
+        running = std::move( ready[0] );
+        ready.erase( ready.begin() );
+    }
+}
+\end{lstlisting}
+The tasks in the \texttt{ready} list are sorted with respect to their priority value in increasing order, thus the task at the beginning of the list needs to be executed first.
+If a task is already running, it is needed to check whether the ready task has a higher priority.
+This is done by the \texttt{preempt} function which returns \texttt{true} if the ready task shall preempt the running task.
+
+When a running task is completed,
+its instance counter is updated, as well as the absolute due date and state parameters.
+As described in the third chapter, the next state of a successfully completed task is set to 
+\texttt{BLUE}.
+The skip factor of the task is incremented.
+The task is inserted into the \texttt{pending} vector and \texttt{running} variable is set to \texttt{NULL}.
+If the running task reaches its due date and it is not completed, the task is aborted and its next instance state is set to \texttt{RED}.
+The current skip factor of the task is stored in a vector and its new value is set to $0$.
+The task is then stored to the \texttt{pending} vector.
+
+In every time slice, the deadlines of the tasks in the ready list are checked.
+If a task has reached its deadline, its current instance is skipped and the next instance state is set to \texttt{RED}.
+The skip factor of a skipped ready task is dealt with in the same way as the skip factor of the aborted running task.
+
+The operation of the periodic tasks simulator is shown by a pseudocode in Algorithm \ref{simulator}.
+\begin{algorithm}
+\caption{Periodic tasks simulator.\label{simulator}}
+\begin{algorithmic}
+\STATE initialize tasks in $pending$ list
+\STATE $running = \emptyset$
+\STATE $current\_time = 0$
+\WHILE{$current\_time < simulation\_time$}
+	\FORALL{tasks in $pending$}
+		\IF{task is ready}
+			\STATE $ready.append(task)$
+		\ENDIF
+	\ENDFOR
+	\FORALL{tasks in $ready$}
+		\STATE compute task priority
+	\ENDFOR
+	\STATE schedule task with highest priority
+	\IF{$running \neq \emptyset$}
+		\IF{$running$ is finished}
+			\STATE increment $running$ instance counter
+			\STATE update $running$ parameters
+			\STATE increment $running$ skip factor
+			\STATE $pending.append(running)$
+			\STATE $running = \emptyset$
+		\ELSE 
+			\IF{$running$ missed deadline}
+				\STATE reset $running$ skip factor to $0$
+				\STATE $pending.append(running)$
+				\STATE $running = \emptyset$ 
+			\ENDIF
+		\ENDIF
+	\ENDIF
+	\FORALL{tasks in $ready$}
+		\IF{task missed deadline}
+			\STATE reset $running$ skip factor to $0$
+			\STATE $pending.append(task)$
+			\STATE $ready.erase(task)$
+		\ENDIF
+	\ENDFOR
+	\STATE $current\_time+=1$
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
 \section{Support for Multicriterial Optimization and Cooperative Coevolution}
+\subsection{Multicriterial Optimization}
+The approach described in previous sections is a single-objective optimization problem with the goal of maximizing the mean skip factor of the given task set.
+The problem with this approach is that the produced schedules have a tendency to always skip the tasks with longest periods.
+The skip factors of such tasks approach zero.
+As tasks with longer periods appear in fewer instances, their skip factors have a negligible impact on the overall mean skip factor value used as the fitness function.
+On the other hand, by skipping tasks with longer periods, the execution of tasks with shorter periods is stimulated, which significantly increases the mean skip factor value.
+A schedule with unevenly distributed skip factors is not acceptable.
+To generate schedules where task skip factors are evenly distributed, a second optimization criterion must be included.
+
+The second criterion punishes the heuristics that generated schedules with large deviation between skip factors of the tasks.
+The goal is to minimize the deviation between the task skip factors.
+As a measure of the deviation between the skip factors, the Gini coefficient is used\footnote{The Gini coefficient is used for measuring the inequality among values of a frequency distribution. A Gini coefficient of zero expresses that all values are the same, whereas a Gini coefficient of one expresses maximal inequality \cite{gini1912variabilita}.}.
+For a set of $n$ tasks with skip factors $s_i$, the Gini coefficient is computed by the following expression:
+\begin{equation*}
+G = \frac{\sum_{i=1}^{n}\sum_{j=1}^{n}|s_i - s_j|}{2n^2\overline{s}}.
+\end{equation*}
+
+Optimization of the two objectives is implemented according to the NSGA-II algorithm.
+The \texttt{get\_value} method is expanded in a way that the return value is a pair of two fitness values: mean skip factor and Gini coefficient.
+The fitness values are stored in the member variable \texttt{fitness\_NSGA} of type \texttt{std::pair} in the \texttt{TreeSolution} class.
+Since the second objective, Gini coefficient, is a minimization problem, the first objective must also be reduced to minimization.
+This is achieved by assigning the negative value of the skip factor as the fitness value of the first objective.
+The NSGA-II algorithm is implemented by the \texttt{get\_solution} method of the \texttt{NSGA} class.
+Non-dominated sorting and grouping sort are implemented by separate methods.
+% The dominant count $\mu_i$ and $S_i$ vector for every individual are added as member variables to the \texttt{TreeSolution} class.
+
+\subsection{Cooperative Coevolution}
+The idea of using cooperative coevolution in solving the considered scheduling problem is to add another independent population whose genotypes represent acceptance tests for new tasks.
+In that way, the heuristic for computing the task priorities and the heuristic for performing acceptance tests are evolved separately.
+The genotype nodes are the same in both populations.
+
+Using the acceptance tests is useful for solving the problem of aborted tasks.
+When a running task reaches its due date and it is not completed, the task is aborted and the time 
+in which it was executed is wasted.
+The goal is to evolve an acceptance test which rejects the tasks that cannot be completed by their due date, so they don't waste any CPU time.
+
+To implement coevolution, the \texttt{TreeSolution} class is modified in a way that it contains two genotypes - the first genotype represents the heuristic used for priority calculation, while the second genotype corresponds to the acceptance test. 
+The evolution operators (selection, crossover and mutation) are performed separately on the two genotypes.
+Collaboration between the two genotypes is formed when the individual is being evaluated.
+
+The acceptance test is integrated in the periodic tasks simulator.
+After the activation of a new task instance is detected, the acceptance test heuristic is executed.
+If the computed value is greater than zero, the task is accepted and placed into the \texttt{ready} list.
+Otherwise, the task is automatically skipped. 
+Its skip factor is reset and the task is placed in the \texttt{pending} list.
+The priority computation by the other genotype is performed upon the accepted tasks.
+
 \section{Integrating Evolved Scheduling Heuristics into FreeRTOS}
 \subsection{FreeRTOS Task Management}
 FreeRTOS is an open-source real-time operating system designed for embedded systems. 
