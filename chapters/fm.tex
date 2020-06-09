@@ -13,8 +13,8 @@ The scope of this work considers scheduling various sets of concurrent periodic 
 The formal definition of a schedule is stated in the following text.
 \begin{mydef}
 A schedule is defined as a function $\sigma : \mathbb{R}^{+} \rightarrow \mathbb{N}$ such that 
-$\forall t \in \mathbb{R}^{+}, \exists t_1, t_2$ such that $t \in [\, t_1, t_2 \rangle$ and 
-$\forall t' \exists [\, t_1, t_2 \rangle \sigma(t) = \sigma(t')$.
+$\forall t \in \mathbb{R}^{+}, \exists \; t_1, t_2$ such that $t \in [\, t_1, t_2 \rangle$ and 
+$\forall \; t' \; \exists \; [\, t_1, t_2 \rangle \; \sigma(t) = \sigma(t')$.
 \end{mydef}
 In other words, $\sigma(t)$ is an integer step function and $\sigma(t) = k$, with $k > 0$, means that task $J_k$ is is executing at time $t$, while $\sigma(t) = 0$ means that the CPU is idle.
 An example of a schedule function is shown in figure \ref{schedule_function}.
@@ -31,7 +31,7 @@ A set of tasks is said to be \textit{schedulable} if there exists at least one a
 \subsection{Timing Constraints of Real-Time Tasks}
 In this work, the timing constraints of the tasks are of interest, specifically the task deadlines.
 A deadline represents the time before which a task should complete its execution without causing any damage to the system.
-A deadline specified with resprect to the task arrival time is called an \textit{absolute deadline}, whereas a deadline specified with resprect to time zero is called a \textit{relative deadline}.
+A deadline specified with respect to the task arrival time is called an \textit{absolute deadline}, whereas a deadline specified with resprect to time zero is called a \textit{relative deadline}.
 The timing parameters characterizing a real-time task $\tau_i$ are the following:
 \begin{itemize}
     \item arrival time $a_i$ - the time at which a task becomes ready for execution,
@@ -58,7 +58,7 @@ E_i = max( 0, L_i ).
 \end{align*}
 
 Task importance is specified through a value parameter, associated with each task.
-Depending on particular application, task value may be directly related to task parameters such as computation time or deadline value, but can also be set to an arbitary value. 
+Depending on particular application, task value may be directly related to task parameters such as computation time or deadline value, but can also be set to an arbitrary value. 
 The value associated with a task as a function of its completion time is called a \textit{utility function}.
 Utility function is used to describe the benefit of executing a task depending on the time at which the task is completed in relation to the task deadline.
 Depending on the consequences of a missed deadline, real-time tasks are usually distinguished in four categories \cite{buttazzo2011hard}:
@@ -204,6 +204,7 @@ Methods for reducing permanent overload are the following:
 \end{itemize}
 
 \subsection{Job Skipping}
+\label{skip_algs}
 Job skipping method reduces system load by skipping some jobs in the task set. Jobs to be skipped are assigned in a way that the remaining jobs can be scheduled within their deadlines.
 This method is applicable for firm real-time tasks, as they allow a certain miss ratio. 
 The quantified ratio of tasks that may not be executed is directly related to Quality of Service 
@@ -365,7 +366,7 @@ Next, the waiting list is checked in order to indentify ready tasks.
 Ready tasks are put into red and blue ready list according to their state and the idle function value at current time. 
 If current time belongs to an EDL idle time, the first instance in the blue ready list is selected for execution. Otherwise, the first instance from the red ready list is selected.
 
-\begin{algorithm}
+\begin{algorithm} % TODO staviti \small i captione
 \caption{RLP scheduling algorithm.\label{alg:rlp}}
 \begin{algorithmic}
 \STATE initialize tasks
@@ -402,7 +403,7 @@ If current time belongs to an EDL idle time, the first instance in the blue read
 \end{algorithmic}
 \end{algorithm}
 
-An impementation of the RLP algorithm was tested on the same set of periodic tasks as in the previous sections and the resulting schedule is shown in figure 
+An implementation of the RLP algorithm was tested on the same set of periodic tasks as in the previous sections and the resulting schedule is shown in Fig. 
 \ref{rlp_schedule}.
 Since there are four deadline misses, the QoS is increased to 0.73.
 
@@ -413,7 +414,7 @@ Since there are four deadline misses, the QoS is increased to 0.73.
     \label{rlp_schedule}
 \end{figure}
 
-A comparison of QoS value depending on the utilization value for the described algorithms is shown in figure \ref{fm_comparison}.
+A comparison of QoS value depending on the utilization value for the described algorithms is shown in Fig. \ref{fm_comparison}.
 
 \begin{figure}[ht]
     \centering
