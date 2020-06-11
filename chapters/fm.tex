@@ -1,5 +1,6 @@
 \chapter{Formal Methods of Scheduling Overloaded Real-Time Systems}
-\section{General approach for task scheduling}
+\label{fm}
+\section{General Approach for Task Scheduling}
 The timing behavior of a real-time system is analyzed by modelling all software activities running in the processor as a set of $n$ real-time tasks: $T = \{\tau_1, \tau_2, ..., \tau_n\}$.
 A task $\tau_i$ is considered as an infinite sequence of instances, or jobs $\tau_{i,j}$.
 A task is said to be periodic if all its jobs are released one after the other with an interval $T_i$ called the task period.
@@ -40,7 +41,7 @@ The timing parameters characterizing a real-time task $\tau_i$ are the following
     \item start time $s_i$ - the time at which a task starts its execution,
     \item finish time $f_i$ - the time at which a task finishes its execution.
 \end{itemize}
-The timing parameters of a task are illustrated in Figure \ref{task_timing}.
+The timing parameters of a task are illustrated in Fig. \ref{task_timing}.
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.8\textwidth]{images/task_timing.pdf}
@@ -68,7 +69,7 @@ Depending on the consequences of a missed deadline, real-time tasks are usually 
     \item firm real-time tasks,
     \item hard real-time tasks.
 \end{itemize}
-The typical utility functions differ for the stated categories and are shown in Figure \ref{utility}.
+The typical utility functions differ for the stated categories and are shown in Fig. \ref{utility}.
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.8\textwidth]{images/task_value.pdf}
@@ -106,7 +107,7 @@ It tends toward the optimal schedule, but it does not guarantee finding it \cite
 A task competing for CPU time is called an \textit{active} task.
 If an active task is currently executing, it is referred to as the \textit{running} task.
 The other tasks waiting for CPU time are in the \textit{ready} state and are kept in the \textit{ready queue}.
-Figure \ref{ready_queue} shows a schematic view of the ready queue.
+Fig. \ref{ready_queue} shows a schematic view of the ready queue.
 \begin{figure}[ht]
     \centering
     \includegraphics[width=1\textwidth]{images/ready_queue.pdf}
@@ -137,7 +138,7 @@ Due to aperiodic requests or unexpected behaviour of some tasks, the maximum loa
 \subsection{Aperiodic Overloads}
 This type of overload occurs in systems consisting of aperiodic jobs, due to excessive event arrivals. 
 This type of overload can lead to a phenomenon called the \textit{Domino Effect} in which the arrival of a new task can cause all of the previous tasks to miss their deadlines. 
-Figure \ref{aperiodic} depicts such situation on an EDF-scheduled task set. 
+Fig. \ref{aperiodic} depicts such situation on an EDF-scheduled task set. 
 The execution of task $\tau_0$ leads to deadline miss of all the previous tasks.
 
 \begin{figure}[ht]
@@ -171,10 +172,10 @@ In overrun condition, a task (or a job) exceeds its expected utilization value.
 Overruns occur if a job computation time exceeds the expected value, or due to early activation of the next job.
 Transient overloads due to overruns occur if tasks execute for a longer time than expected, or more frequently than expected.
 
-Figure \ref{transient_EDF} shows the effect of transient overload condition under EDF-scheduled system. Task $\tau_2$ exceeded its expected computation time, consequently causing task $\tau_1$ to miss its deadline.
+Fig. \ref{transient_EDF} shows the effect of transient overload condition under EDF-scheduled system. Task $\tau_2$ exceeded its expected computation time, consequently causing task $\tau_1$ to miss its deadline.
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.8\textwidth]{images/tran_overload.pdf}
+    \includegraphics[width=1\textwidth]{images/tran_overload.pdf}
     \caption{An example of transient overload due to task overrun under EDF-scheduled system.}
     \label{transient_EDF}
 \end{figure}
@@ -230,7 +231,7 @@ However, if task \(\tau_2\) is skipped every three instances, the overload is re
 \begin{figure}[ht]
     \centering
     \includegraphics[width=1\textwidth]{images/skipover.pdf}
-    \caption{An example of resolving permanent overload by skipping method.}
+    \caption{An example of resolving permanent overload by job skipping method.}
     \label{skipover}
 \end{figure}
 
@@ -287,7 +288,7 @@ As the schedule results in seven missed instances, QoS equals 0.53.
 \subsubsection{BWP Algorithm}
 Blue When Possible (BWP) algorithm introduces amendments of RTO algorithm disadvantages in a way that blue tasks execute only if there are no red ready instances.
 As BWP increases the number of task instances that complete successfully, it offers a higher QoS level. 
-Figure \ref{bwp} depicts the same overload condition as described in figure 
+Fig. \ref{bwp} depicts the same overload condition as described in figure 
 \ref{rto}, but solved by BWP algorithm. 
 Total number of completed task instances is increased because two blue instances completed successfully, thus increasing QoS to 0.67.
 \\
@@ -353,7 +354,7 @@ Dynamic EDL algorithm is calculated whenever a blue task is released, or a blue 
 
 % If there are no blue instances ready for execution, red instances are scheduled according to EDF algorithm.
 % Otherwise, red instances are processed as late as possible by the EDL rule, while blue instances are executed as soon as possible in the remaining EDL idle times.
-A pseudo-code for RLP algorithm is given in code listing \ref{alg:rlp}.
+A pseudo-code for RLP algorithm is given in Alg. \ref{alg:rlp}.
 The tasks are stored in three lists, sorted in increasing order of deadline: 
 \begin{itemize}
 	\item{waiting list: list of instances waiting for their next release,}
@@ -368,38 +369,38 @@ If current time belongs to an EDL idle time, the first instance in the blue read
 
 \begin{algorithm} % TODO staviti \small i captione
 \caption{RLP scheduling algorithm.\label{alg:rlp}}
-\begin{algorithmic}
-\STATE initialize tasks
-\FOR{task in blue\_ready}
-\IF{$task_{next\_instance}$}
-\STATE abort task
-\ENDIF
-\ENDFOR
-\FOR{task in waiting\_list}
-\IF{\NOT $task_{ready}$}
-\STATE break
-\ENDIF
-\IF{$task_{state}$==RED
-\AND$f_{EDL}(t)=0$}
-\STATE pull task from $waiting\_list$
-\STATE put task into $red\_ready$ list
-\ELSE
-\IF{$blue\_ready = \emptyset$}
-\STATE compute EDL schedule
-\ENDIF
-\IF{$f\_EDL(current\_time) \neq 0$}
-\STATE pull task from $waiting\_list$
-\STATE put task into $blue\_ready$ list
-\ENDIF
-\ENDIF
-\ENDFOR
-\IF{$blue\_ready \neq \emptyset$ 
-\AND $f\_EDL(current\_time) \neq 0$}
-\FOR{task in red\_ready list}
-\STATE pull task from red ready list
-\STATE put task into ready list
-\ENDFOR
-\ENDIF
+\begin{algorithmic}[1]
+\State initialize tasks
+\For{task in blue\_ready}
+\If{$task_{next\_instance}$}
+\State abort task
+\EndIf
+\EndFor
+\For{task in waiting\_list}
+\If{\! $task_{ready}$}
+\State break
+\EndIf
+\If{$task_{state}$==RED
+$\And f_{EDL}(t)=0$}
+\State pull task from $waiting\_list$
+\State put task into $red\_ready$ list
+\Else
+\If{$blue\_ready = \emptyset$}
+\State compute EDL schedule
+\EndIf
+\If{$f\_EDL(current\_time) \neq 0$}
+\State pull task from $waiting\_list$
+\State put task into $blue\_ready$ list
+\EndIf
+\EndIf
+\EndFor
+\If{$blue\_ready \neq \emptyset$ 
+$\And f\_EDL(current\_time) \neq 0$}
+\For{task in red\_ready list}
+\State pull task from red ready list
+\State put task into ready list
+\EndFor
+\EndIf
 \end{algorithmic}
 \end{algorithm}
 
@@ -415,68 +416,70 @@ Since there are four deadline misses, the QoS is increased to 0.73.
 \end{figure}
 
 A comparison of QoS value depending on the utilization value for the described algorithms is shown in Fig. \ref{fm_comparison}.
+The scattered plot shows the results of testing each algorithm on $1500$ different task sets with utilization factors from the interval $[0.90, 1.60]$.
+An eighth degree polynomial regression model for each algorithm is shown by full line.
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=1\textwidth]{images/fm_comparison.pdf}
+    \includegraphics[width=1\textwidth]{images/qos_comp_polyfit.pdf}
     \caption{Comparison of QoS value for RTO, BWP and RLP algorithm.}
     \label{fm_comparison}
 \end{figure}
 
 % \begin{algorithm}
 % \caption{RLP scheduling algorithm.\label{alg:rlp}}
-% \begin{algorithmic}
-% \STATE initialize tasks 
+% \begin{algorithmic}[1]
+% \State initialize tasks 
 
-% \IF{$running\_task$} 
-% \IF{$current\_time == running\_task_{due\_date}$ 
-% \AND $running\_task_{remaining\_time} > 0$}
-% \STATE $running\_task_{state} = RED$ \COMMENT{running task is going to miss deadline}
-% \STATE $set\_next\_instance( running\_task )$
-% \STATE $waiting\_list \leftarrow running\_task$
-% \ENDIF
-% \ENDIF
+% \If{$running\_task$} 
+% \If{$current\_time == running\_task_{due\_date}$ 
+% \And $running\_task_{remaining\_time} > 0$}
+% \State $running\_task_{state} = RED$ \COMMENT{running task is going to miss deadline}
+% \State $set\_next\_instance( running\_task )$
+% \State $waiting\_list \leftarrow running\_task$
+% \EndIf
+% \EndIf
 
 
-% \WHILE{$blue\_ready\_list \neq \emptyset$}
+% \While{$blue\_ready\_list \neq \emptyset$}
 
-% \STATE $task \leftarrow next(blue\_ready\_list)$
-% \IF{$task_{release\_time} + task_{critical\_delay} < current\_time$} 
-% \STATE break
-% \ENDIF
-% \STATE $task \leftarrow pull(blue\_ready\_list)$ \COMMENT{abort blue tasks}
-% \STATE $set\_next\_instance( task )$
-% \STATE $waiting\_list \leftarrow append(task, waiting\_list)$
-% \ENDWHILE
+% \State $task \leftarrow next(blue\_ready\_list)$
+% \If{$task_{release\_time} + task_{critical\_delay} < current\_time$} 
+% \State break
+% \EndIf
+% \State $task \leftarrow pull(blue\_ready\_list)$ \COMMENT{abort blue tasks}
+% \State $set\_next\_instance( task )$
+% \State $waiting\_list \leftarrow append(task, waiting\_list)$
+% \EndWhile
 % \COMMENT{checking waiting list in order to release tasks}
-% \WHILE{$waiting\_list \neq \emptyset$}
-% \STATE $task \leftarrow pull(waiting\_list)$
-% \IF{$task_{release_time} > current\_time$}
-% \STATE $break$
-% \ENDIF 
-% \IF{$task_{state}==RED$
-% \AND$f_{EDL}(t)=0$}
-% \STATE$task \leftarrow pull(waiting\_list)$ \COMMENT{red task release}
-% \STATE$red\_ready\_list \leftarrow append(task, red\_ready\_list)$
-% \ELSE
-% \IF{$blue\_ready\_list \neq \emptyset$}
-% \STATE$compute$ $EDL\_schedule$
-% \ENDIF
-% \IF{$f\_EDL(current\_time) \neq 0$}
-% \STATE $task \leftarrow pull(waiting\_list)$
-% \STATE $blue\_ready\_list \leftarrow append(task, red\_ready\_list)$
+% \While{$waiting\_list \neq \emptyset$}
+% \State $task \leftarrow pull(waiting\_list)$
+% \If{$task_{release_time} > current\_time$}
+% \State $break$
+% \EndIf 
+% \If{$task_{state}==RED$
+% \And$f_{EDL}(t)=0$}
+% \State$task \leftarrow pull(waiting\_list)$ \COMMENT{red task release}
+% \State$red\_ready\_list \leftarrow append(task, red\_ready\_list)$
+% \Else
+% \If{$blue\_ready\_list \neq \emptyset$}
+% \State$compute$ $EDL\_schedule$
+% \EndIf
+% \If{$f\_EDL(current\_time) \neq 0$}
+% \State $task \leftarrow pull(waiting\_list)$
+% \State $blue\_ready\_list \leftarrow append(task, red\_ready\_list)$
 % \COMMENT{blue task release}
-% \ENDIF
-% \ENDIF
-% \STATE $task_{current\_skip\_value} += 1$
-% \ENDWHILE
-% \IF{$blue\_ready\_list \neq \emptyset$ 
-% \AND $f\_EDL(current\_time) \neq 0$}
-% \WHILE{$task \leftarrow next(red\_ready\_list)$}
-% \STATE $task \leftarrow pull(red\_ready\_list)$ \COMMENT{suspend red task}
-% \STATE $waiting\_list \leftarrow append(task, waiting\_list)$
-% \ENDWHILE
-% \ENDIF
+% \EndIf
+% \EndIf
+% \State $task_{current\_skip\_value} += 1$
+% \EndWhile
+% \If{$blue\_ready\_list \neq \emptyset$ 
+% \And $f\_EDL(current\_time) \neq 0$}
+% \While{$task \leftarrow next(red\_ready\_list)$}
+% \State $task \leftarrow pull(red\_ready\_list)$ \COMMENT{suspend red task}
+% \State $waiting\_list \leftarrow append(task, waiting\_list)$
+% \EndWhile
+% \EndIf
 % \end{algorithmic}
 % \end{algorithm}
 

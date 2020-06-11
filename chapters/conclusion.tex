@@ -1,1 +1,22 @@
 \chapter{Conclusion}
+This thesis presented a method for optimizing the skip factor of skippable periodic tasks.
+The considered task model is typical for multimedia applications, where a dynamic scheduler is required.
+Furthermore, the scheduler must be able to handle overload conditions and provide frequent schedule modifications.
+Formal algorithms for sheduling skippable tasks (i. e. RLP and RLP/T) bring a significant overhead when applied to large amount of tasks, due to their computational complexity.
+For that reason, heuristic scheduling is more acceptable in real-time systems with timeliness constraints due to its simplicity and ability to build a schedule with no overhead.
+Genetic programming is suitable for evolving a heuristic which represents a priority function used for building a schedule.
+
+Schedules built by evolved heuristics were compared to the RLP schedules with respect to QoS measure.
+In overload conditions, the results of the evolved heuristic surpass the results achieved by RLP algorithm.
+For utilization factor of $1.6$, the schedule built by the heuristic achieved a $25\%$ greater QoS value.
+
+However, heuristic scheduling does not guarantee a minimum number of completed task instances between skipped ones.
+In other words, skipping consecutive task instances is allowed, which can totally degrade system performance.
+Therefore, using evolved heuristics for scheduling is applicable only in situations where task parameters are known beforehand.
+
+\newcommand{\namesigdate}[2][5cm]{%
+  \begin{tabular}{@{}p{#1}@{}}
+    #2 \\[2\normalbaselineskip] \hrule \\[15pt]
+  \end{tabular}}
+
+\vspace*{\fill} \noindent \hfill \namesigdate{Karla Salamun}
