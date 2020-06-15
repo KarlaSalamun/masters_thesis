@@ -3,12 +3,12 @@
 \section{General Approach for Task Scheduling}
 The timing behavior of a real-time system is analyzed by modelling all software activities running in the processor as a set of $n$ real-time tasks: $T = \{\tau_1, \tau_2, ..., \tau_n\}$.
 A task $\tau_i$ is considered as an infinite sequence of instances, or jobs $\tau_{i,j}$.
-A task is said to be periodic if all its jobs are released one after the other with an interval $T_i$ called the task period.
+A task is periodic if all its jobs are released one after the other with an interval $T_i$ called the task period.
 % Each job has a computation time $c_{i,j}$, a release time $r_{i,j}$ and an absolute deadline $d_{i, j}$\cite{lee2007handbook}.
 % For simplicity, all jobs of the same task are assumed to have the same computation time and relative deadline, which will be denoted in the following text as $c_i$ and $d_i$, respectively.
 
 The operation of allocating the CPU to a selected task is referred to as \textit{dispatching}.
-A set of rules that determines the selection of a task to be executed at current time is called a 
+A set of rules for selecting the task which shall be executed at current time is called a 
 \textit{scheduling algorithm}.
 The scope of this work considers scheduling various sets of concurrent periodic tasks which execute on a single processor.
 The formal definition of a schedule is stated in the following text.
@@ -17,12 +17,12 @@ A schedule is defined as a function $\sigma : \mathbb{R}^{+} \rightarrow \mathbb
 $\forall t \in \mathbb{R}^{+}, \exists \; t_1, t_2$ such that $t \in [\, t_1, t_2 \rangle$ and 
 $\forall \; t' \; \exists \; [\, t_1, t_2 \rangle \; \sigma(t) = \sigma(t')$.
 \end{mydef}
-In other words, $\sigma(t)$ is an integer step function and $\sigma(t) = k$, with $k > 0$, means that task $J_k$ is is executing at time $t$, while $\sigma(t) = 0$ means that the CPU is idle.
-An example of a schedule function is shown in figure \ref{schedule_function}.
+In other words, $\sigma(t)$ is an integer step function and $\sigma(t) = k$, with $k > 0$, means that task $\tau_k$ is is executing at time $t$, while $\sigma(t) = 0$ means that the CPU is idle.
+An example of a schedule function is shown in Fig. \ref{schedule_function}.
 \begin{figure}[ht]
     \centering
     \includegraphics[width=1\textwidth]{images/sched_function.pdf}
-    \caption{Schedule obtained by executing tasks $J_1$, $J_2$ and $J_3$. Modified from \cite{buttazzo2011hard}.}
+    \caption{Schedule obtained by executing tasks $\tau_1$, $\tau_2$ and $\tau_3$. Modified from \cite{buttazzo2011hard}.}
     \label{schedule_function}
 \end{figure}
 
@@ -32,7 +32,7 @@ A set of tasks is said to be \textit{schedulable} if there exists at least one a
 \subsection{Timing Constraints of Real-Time Tasks}
 In this work, the timing constraints of the tasks are of interest, specifically the task deadlines.
 A deadline represents the time before which a task should complete its execution without causing any damage to the system.
-A deadline specified with respect to the task arrival time is called an \textit{absolute deadline}, whereas a deadline specified with resprect to time zero is called a \textit{relative deadline}.
+A deadline specified with respect to the task arrival time is called an \textit{absolute deadline}, whereas a deadline specified with respect to time zero is called a \textit{relative deadline}.
 The timing parameters characterizing a real-time task $\tau_i$ are the following:
 \begin{itemize}
     \item arrival time $a_i$ - the time at which a task becomes ready for execution,
@@ -83,7 +83,7 @@ In the case of firm real-time tasks, executing a task after its deadline brings 
 Hard real-time tasks must complete before their deadline. Missing the deadline may cause catastrophic consequences on the system.
 
 \subsection{Classification of Scheduling Algorithms}
-The algorithms for scheduling real-time tasks proposed in literature can be classified by the following criterions \cite{buttazzo2011hard}:
+The algorithms for scheduling real-time tasks proposed in literature can be classified with respect to the following criterions \cite{buttazzo2011hard}:
 \begin{itemize}
     \item support for preemption,
     \item static / dynamic algorithms,
@@ -157,7 +157,7 @@ However, there are different online scheduling algorithms proposed in the litera
     \item{robust.}
 \end{itemize}
 
-Best effort algorithms always accept new tasks into the ready queue upon arrival. Tasks to be skipped are determined through proper priority assignment with respect to their value.
+Best effort algorithms always accept new tasks into the ready queue upon arrival. Tasks which will be skipped are determined through proper priority assignment with respect to their value.
 
 Algorithms with acceptance test perform a guarantee test at every job activation. 
 A new task that enters the system is accepted if the task set is found schedulable by the guarantee routine. Otherwise, task is rejected.
@@ -206,7 +206,7 @@ Methods for reducing permanent overload are the following:
 
 \subsection{Job Skipping}
 \label{skip_algs}
-Job skipping method reduces system load by skipping some jobs in the task set. Jobs to be skipped are assigned in a way that the remaining jobs can be scheduled within their deadlines.
+Job skipping method reduces system load by skipping some jobs in the task set. Jobs which will be skipped are assigned in a way that the remaining jobs can be scheduled within their deadlines.
 This method is applicable for firm real-time tasks, as they allow a certain miss ratio. 
 The quantified ratio of tasks that may not be executed is directly related to Quality of Service 
 (QoS) metric. 
@@ -220,7 +220,7 @@ According to this model, every task is described as following:
 \end{align*}
 where $c_i$ is the worst-case computation time, $T_i$ is the task period, $d_i$ is the relative deadline (assumed equal to the period) and $s_i$ is the skip parameter which marks the minimum distance between two consecutive skips, \(2 \leq S_i < \infty\).
 
-An example of schedule with task skipping is given in figure \ref{skipover}. 
+An example of schedule with task skipping is given in Fig. \ref{skipover}. 
 Since the utilization factor equals 
 \begin{equation*}
 U_p = \sum_{i=1}^{n} \frac{C_i}{T_i} = 1.17,
@@ -273,7 +273,7 @@ The Red Tasks Only (RTO) algorithm decreases system load by always skipping the 
 % The stated condition is the worst-case condition for periodic task sets.
 As all instances of blue tasks are systematically rejected rregardless of their impact on the equivalent utilization factor, RTO schedule has the lowest QoS level for given task set.
 Implementation of RTO algorithm was tested on an example shown in 
-figure \ref{rto}.
+Fig. \ref{rto}.
 Total processor utilization $U_p$ equals 1.19 and the equivalent processor 
 utilization $U_p^\ast$ equals 0.79.
 As the schedule results in seven missed instances, QoS equals 0.53. 
@@ -288,7 +288,7 @@ As the schedule results in seven missed instances, QoS equals 0.53.
 \subsubsection{BWP Algorithm}
 Blue When Possible (BWP) algorithm introduces amendments of RTO algorithm disadvantages in a way that blue tasks execute only if there are no red ready instances.
 As BWP increases the number of task instances that complete successfully, it offers a higher QoS level. 
-Fig. \ref{bwp} depicts the same overload condition as described in figure 
+Fig. \ref{bwp} depicts the same overload condition as described in Fig. 
 \ref{rto}, but solved by BWP algorithm. 
 Total number of completed task instances is increased because two blue instances completed successfully, thus increasing QoS to 0.67.
 \\

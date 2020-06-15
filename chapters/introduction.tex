@@ -1,5 +1,5 @@
 \chapter{Introduction}
-Real-time systems have a wide range of application, including monitoring systems in industrial plants, automotive, space missions, multimedia systems and consumer electronics.
+Real-time systems have a wide range of applications, including monitoring systems in industrial plants, automotive, space missions, multimedia systems and consumer electronics.
 Reliability of these systems depends on the timeliness and predictability of task execution.
 The scope of this thesis considers firm real-time systems, where the completion of a tardy task brings no value to the system.
 A typical example of such system is a multimedia system.
@@ -16,15 +16,13 @@ A meta-algorithm is a method of assigning task instances (jobs) to resources wit
 It is defined for a given scheduling environment.
 In this thesis, the considered environment is a single-machine environment where $n$ periodic tasks are processed on a single resource. 
 The meta-algorithm encapsulates the priority function which defines priority values for the tasks.
-This thesis deals with generating the priority function by using genetic programming.
+This thesis deals with generating the priority function using genetic programming.
 
 The thesis is organized as follows.
 Chapter \ref{genprog} gives an introduction to optimization techniques, evolutionary algorithms and genetic programming.
 The main concepts of multi-objective optimization and cooperative coevolution are described.
-The formal methods for handling transient and permanent overload conditions in real-time tasks are described in Chapter \ref{fm}.
-The main focus is set on skippable periodic tasks.
-The skip-over task model is described, as well as the scheduling algorithms based on this model.
-Chapter \ref{implementation} presents in detail the implementation of a framework for genetic programming in C++ language.
+Chapter \ref{fm} describes the formal methods for handling transient and permanent overload conditions in real-time systems with emphasis on job skipping techniques.
+Chapter \ref{implementation} presents detailed description of the implementation of a framework for genetic programming in C++ language.
 The interfaces for applying evolved heuristic to task scheduling problem and evaluating its performace are also described.
-Chapter \ref{results} gives a comparison of the implemented solution to formal algorithms and an existing framework for evolutionary computation.
-Additionally, the results of integrating the evolved priority function to FreeRTOS scheduler are presented.
+In Chapter \ref{resutls}, the genetic programming scheduling approach is compared to formal scheduling algorithms. Moreover, the implemented framework for genetic programming is compared to an existing framework for evolutionary computation.
+Additionally, the performance of the evolved heuristic implemented in FreeRTOS scheduler is presented. 

@@ -1,25 +1,26 @@
 \chapter{Genetic Programming}
 \label{genprog}
 \section{Optimization}
-An optimization problem is the problem of finding the best solution according to some metric to some problem instance.% from all feasible solutions.
-Depending on the dimension of the solutions, optimization problems are distinguished in two categories: single-objective and multi-objective optimization problems.
+An optimization problem is the problem of finding the best solution to some problem instance. % from all feasible solutions.
+Depending on the number of objective functions, optimization problems are distinguished in two categories: single-objective and multi-objective optimization problems.
 
 A single-objective optimization problem in its general form is defined in the following way:
 \begin{align*}
 \label{opt_problem}
-\text{minimize/maximize } & f_(\textbf{x}),   \\
+\text{minimize/maximize } & f\_(\textbf{x}),   \\
 \text{subject to } & g_j(\textbf{x}) \geq 0, & j = & 1, 2, ..., J \\
            & h_k(\textbf{x}) = 0, & k = & 1, 2, ..., K \\
            & x_{i}^{L} \leq x_i \leq x_{i}^{U}, & i = & 1, 2, ..., n. 
 \end{align*}
+Function $f(\textbf{x})$ is the objective function for the problem.
 A solution $\textbf{x}$ is a vector of $n$ decision variables: $\textbf{x} = \{x_1,x_2,...,x_n\}$.
-The terms $g_j(\textbf{x})$ and $h_k(\textbf{x})$ are called constraint functions. 
-A constraint function is a set of inequations or equations which any feasible solution must fulfill. 
-The last set of constraints defines a lower $x_{i}^{L}$ and an upper $x_{i}^{U}$ bound for the values that each decision variable can take. 
+The set of $J$ functions $g_j(\textbf{x})$ is called inequality constraints, while the set of $K$ functions $h_k(\textbf{x}$ is reffered to as equality constraints.
+In order for a solution to be feasible, all constraints, specifed with constraint functions and their respective bounds, have to be satisfied.
+The last set of constraints defines a lower $x_{i}^{L}$ and an upper $x_{i}^{U}$ bound for the values that each decision variable. 
 The described sets of constraints define a decision space $D$.
 Each solution \textbf{x} is a single point in the decision space.
-The objective function $f$ to be maximized or minimized is often reffered to as the \textit{fitness} function.
-With the case of the functions to be minimized, the fitness function is translated to its complementary value, $-f$.
+% The objective function $f$ to be maximized or minimized is often reffered to as the \textit{fitness} function.
+Maximization problems can be reduced to minimization problems and vice versa by translating the value of the objective function to its complementary value, $-f$.
 Thus, the greater value of a fitness function corresponds to a better solution.
 
 \begin{mydef}
@@ -34,26 +35,28 @@ $\delta > 0, |\textbf{x} - \textbf{x}^{*}| \leq \delta$, the condition $f(\textb
 If an optimization algorithm deterministically chooses the better solution than the current solution, the solutions generally converge towards the local optimum and the algorithm yields the wrong result.
 A possible solution to this problem is stochastically accepting the solutions that are worse than the current solution.
 
+\section{Genetic Algorithms}
+
 The algorithms that search the solution space to find good solutions, but do not guarantee finding the optimal solution are called \textit{heuristics}. 
 Heuristics typically have relatively low computational complexity \cite{cupic2013prirodom}.
 A \textit{metaheuristic} can be defined as an upper level general methodology (template) that can be used as a guiding strategy in designing underlying heuristics to solve specific optimization problems \cite{talbi2009metaheuristics}.
 
-A family of optimization algorithms whose stochastic component is inspired by biological evolution is called \textit{evolutionary algorithm}.
-Besides stochastic optimization, evolutionary algotihms have a metaheuristic character.
+Stohastic optimization algorithms inspired by processes in biological evolution are called \textit{evolutionary algorithms}.
+Besides stochastic optimization, evolutionary algorithms have a metaheuristic character.
 In this context, a solution to a given optimization problem is called an \textit{individual} and a set of solutions is called a \textit{population}.
 The basic approach in all evolutionary algorithms is applying evolutionary operators (selection, crossover, mutation and recombination) to a population of solutions.
-As a result, the population gradually evolves with respect to the fitness function.
 Every interation of the algorithm corresponds to a generation.
+As a result, the population gradually evolves towards better areas of the search space. 
+The value which indicates how well the solution fulfills the problem objective is referred to as \textit{fitness} value.
 
 Evolutionary algorithms are divided into four classes: 
 \begin{itemize}
-	\item genetic algorithms,
-	\item genetic programming,
-	\item evolutionary strategies,
-	\item evolutionary programming.
+    \item genetic algorithms,
+    \item genetic programming,
+    \item evolutionary strategies,
+    \item evolutionary programming.
 \end{itemize}
 
-\section{Genetic Algorithms}
 The general approach in genetic algorithms is to generate a population of genotypes and apply evolution operators on them.
 A genotype is a data structure which represents a potential solution to the given problem.
 
@@ -79,7 +82,7 @@ A schematic view of the steady-state implementation is shown in Fig. \ref{genalg
 In every generation, two parents are selected.
 The offspring is created by performing crossover on the parents and mutating the resulting genotype.
 Before inserting into the population, the offspring is evaluated to determine whether it can replace an existing population member.
-If the offspring is to be inserted in the population, it usually replaces the worst genotype in the population.
+If the offspring is inserted in the population, it usually replaces the worst genotype in the population.
 Alternatively, the genotype to be replaced can be the oldest member, a randomly selected member or it can be determined by a selection operator modified in a way that it prefers selecting worse genotypes.
 A pseudocode for the steady-state genetic algorithm is given in Alg. \ref{genalg_ss}.
 \begin{algorithm}
@@ -106,14 +109,24 @@ This implementation is shown in Fig. \ref{genalg:impl_2}.
     \caption{A schematic view of the generational genetic algorithm.}
     \label{genalg:impl_2}
 \end{figure}
-In every algorithm step, a new temporary population is created, consisting only of the offspring members.
-When the new population size reaches the size of the parent population, the latter is replaced by the new population.
-The basic approach to generational genetic algorithm is not elitistic - it does not necessarily keep the best solution found. 
+In every step of the algorithm, a new temporary population is created, consisting only of the offspring members.
+When the size of the new population reaches the size of the parent population, the latter is replaced by the new population.
+The basic approach to generational genetic algorithm is not elitistic, i.e. it does not necessarily keep the best solution found. 
 A modification of the algorithm that involves elitism directly adds the current best solution (or a few of them) to the offspring population.
 The rest of the offspring population is generated by applying crossover on the parents and mutating the result.
 An elitistic implementation of the generational genetic algorithm is given in Alg.
  \ref{genalg_g}.
-\begin{algorithm}
+
+\section{Tree-Based Genetic Programming}
+Genetic programming is an extension of the conventional genetic algorithm where the genotypes represent a program that solves the considered problem.
+This is achieved by increasing the complexity of the structures undergoing adaptation.
+A typical data structure used in genetic programming is a tree which represents a hierarchical computer program of dynamically varying size and shape \cite{koza1992genetic}.
+Fig. \ref{genprog:ex1} depicts an example of such data structure which can be represented as a function:
+\begin{equation*}
+2 \cdot (x-5) + \frac{y}{z + 3}.
+\end{equation*}
+
+\begin{algorithm}[H]
 \caption{Elitistic variant of the generational genetic algorithm.\label{genalg_g}}
 \begin{algorithmic}[1]
 \State $\text{population} \gets create\_initial\_population()$
@@ -132,29 +145,20 @@ An elitistic implementation of the generational genetic algorithm is given in Al
 \end{algorithmic}
 \end{algorithm}
 
-\section{Tree-Based Genetic Programming}
-Genetic programming is an extension of the conventional genetic algorithm where the genotypes represent a program that solves the considered problem.
-This is achieved by increasing the complexity of the structures undergoing adaptation.
-A typical data structure used in genetic programming is a tree which represents a hierarchical computer program of dynamically varying size and shape \cite{koza1992genetic}.
-An example of such data structure is shown in Fig. \ref{genprog:ex1}.
-\begin{figure}[ht]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth]{images/gp_ex1.pdf}
-    \caption{An example of a tree structure representing program.}
+    \caption{An example of a tree structure representing a program.}
     \label{genprog:ex1}
 \end{figure}
-\\This example corresponds to the function:
-\begin{equation*}
-2 \cdot (x-5) + \frac{y}{z + 3}.
-\end{equation*}
 
 Each genotype is composed of function and terminal nodes.
 Function nodes may be standard arithmetic operations, programming operations, mathematical or logical functions.
 In Fig. \ref{genprog:ex1}, function nodes are arithmetical operators ($+, -, *, /$), while the other nodes are terminal.
 Each terminal node represents a parameter related to the specific problem and can be of various data types.
 Moreover, a terminal node can be a constant ($2, 5, 3$ in Fig. \ref{genprog:ex1}) or a variable ($x, y, z$).
-As in general genetic algorithms, each individual is measured by its fitness value.
-The computation of the fitness value depends on the problem nature.
+As in general genetic algorithms, each individual is assigned a fitness value in the evaluation process.
+The computation of the fitness value depends on the nature of the problem.
 In general, fitness value measures how well the genotype solves the given problem.
 
 The initial population consists of random compositions of the function and terminal nodes.
@@ -195,7 +199,7 @@ An example of a mutated individual is shown in Fig. \ref{genprog:ex3}.
 
 \newpage
 \section{Multi-Objective Optimization}
-A multi-objective optimization problem consists of multiple objective functions which are to be maximised or minimised. 
+A multi-objective optimization problem consists of multiple objective functions which are maximised or minimised. 
 The general form of a multi-objective optimization problem is stated as follows:
 \begin{align*}
 \text{minimize/maximize } & f_m(\textbf{x}),  & m = & 1, 2, ..., M \\
@@ -208,10 +212,10 @@ While optimizing a set of $M$ functions, the problem can be stated in a way that
 Since the minimization problem of a function $f_i$ can be reduced to maximization of the function $-f_i$, the general form can be stated as a problem of maximization or minimization of all $M$ functions.
 
 In multi-objective optimization, the objective functions constitute a multi-dimensional space $Z$, called the objective space. 
-For each solution $\textbf{x}$ in the decision variable space, there exists a point in the objective space, denoted by $f(\textbf{x}) = \textbf{z} = {z_1, z_2, ... z_M}$ 
+For each solution $\textbf{x}$ in the decision variable space, there exists a point in the objective space, denoted by $f(\textbf{x}) = \textbf{z} = \{z_1, z_2, ... z_M\}$ 
 \cite{deb2001multi}. 
-Since the fitness value $\textbf{z}$ of a solution $\textbf{x}$ is a vector, two solutions 
-$\textbf{x}^{(1)}$ and $\textbf{x}^{(2)}$ cannot be directly compared. 
+Since $\textbf{z}$ is a vector, two solutions 
+$\textbf{x}^{(1)}$ and $\textbf{x}^{(2)}$ with corresponding vectors $\textbf{z}^{(1)}$ and $\textbf{z}^{(2)}$ cannot be directly compared. 
 
 In most multi-objective optimization algorithms, comparison between solutions is done with the aid of the domination concept. 
 
@@ -237,16 +241,18 @@ Some multi-objective optimization algortihms require sorting the population in d
 Such subsets are referred to as fronts. 
 
 A method for sorting the population into fronts is called non-dominated sorting. 
-The complexity of the basic approach for non-dominated sorting is $O(MN^3)$, where $M$ is the number of objective functions and $N$ is the population size.
-An approach for non-dominated sorting used in this work is described in Alg. 
-\ref{nondomsort}. This is a faster and more acceptable method for dominated sorting which requires at most $O(MN^2)$ computations \cite{deb2001multi}.
-For every solution $i$, a domination count $\mu_i$ is calculated. The domination count is the number of solutions which dominate the solution $i$. The solutions that have $\mu_i = 0$ form a non-dominant set.
+The complexity of the basic approach for non-dominated sorting is $\mathcal{O}(MN^3)$, where $M$ is the number of objective functions and $N$ is the population size.
+An approach for non-dominated sorting used in this work is described with Alg. 
+\ref{nondomsort}. This is a faster and more acceptable method for dominated sorting which requires at most $\mathcal{O}(MN^2)$ computations \cite{deb2001multi}.
+For every solution $i$, a domination count $\mu_i$ is calculated. 
+The domination count is the number of solutions which dominate the solution $i$. 
+The solutions that have $\mu_i = 0$ form a non-dominated set.
 Secondly, for every solution a set $S_i$ is determined. The set $S_i$ consists of the indices of all of the solutions that are dominated by the solution $i$. 
 The solutions with $\mu_i=0$ are set as the first front. 
-The next part of the process is to find the dominated solutions for every solution in the last 
-Next, for each of the solutions in the last identified front. 
-The counters $\mu_j$ for the dominated solutions are reduced. 
-If for any solution the counter $\mu_j$ becomes zero, it means that the solution is not dominated by any solutions in the remaining population and it is added to a new front. 
+The next part of the process is to compute subsequent fronts.
+This is done by finding the dominated solutions in the remaining population for each solution in the last computed front.
+The counters $\mu_i$ for the dominated solutions are reduced. 
+If for any solution the counter $\mu_i$ becomes zero, it means that the solution is not dominated by any solutions in the remaining population and it is added to a new front. 
 
 \begin{algorithm}
 \caption{Non-dominated sorting.\label{nondomsort}}
@@ -279,9 +285,9 @@ If for any solution the counter $\mu_j$ becomes zero, it means that the solution
 \end{algorithmic}
 \end{algorithm}
 
-The algorithms based on the concept of non-dominated sorting is the Non-Dominated Sorting Genetic Algorithm (NSGA). 
-While evaluating the solutions, each individual is assigned a scalar value which represents its fitness. 
-The individuals that belog to a front closer to the non-dominated set are assigned a greater fitness value. Additionally, the individuals of the same front that are clustered are assigned a diminished fitness value. 
+Genetic algorithm based on the concept of non-dominated sorting is the Non-Dominated Sorting Genetic Algorithm (NSGA). 
+In the evaluation of the solutions, each individual is assigned a scalar value which represents its fitness. 
+The individuals that belong to a front closer to the non-dominated set are assigned a greater fitness value. Additionally, the individuals of the same front with clustered objective values are assigned a diminished fitness value. 
 In that way, the diversity between the individuals is stimulated. 
 
 In this work, the algorithm NSGA-II is used for handling multi-objective optimization problems. 
@@ -290,19 +296,20 @@ NSGA-II is an improved version of NSGA algorithm and it will be described in the
 \subsection{NSGA-II Algorithm}
 One of the main disadvantages of the original NSGA algorithm is the lack of elitism which significantly slows down the performance of the genetic algorithm due to the loss of good solutions once they have been found \cite{deb2000fast}. 
 The NSGA-II algorithm is a modification of the original NSGA algorithm and its main feature is elitist approach in selecting new population members. 
-An implementation of the NSGA-II algorithm is described by Alg. \ref{nsga-ii}.
+An implementation of the NSGA-II algorithm is described with Alg. \ref{nsga-ii}.
 
 The NSGA-II algorithm creates an offspring population $Q_t$ of the same size $N$ as the parent population $P_t$.
 A combined population $R_t = P_t \cup Q_t$ of size $2N$ is formed.
 The population $R_t$ is then sorted according to non-dominated sorting. 
 After non-dominated sorting, the population is fragmented into $\rho$ fronts: $\mathcal{F}_1, ..., \mathcal{F}_\rho$.
-The new parent population $P_{t+1}$ is formed by adding solutions from the first $\mu$ fronts which can be added in full to the new population. 
+The new parent population $P_{t+1}$ is formed by adding solutions from the fronts.
+Since the size of the new population must be equal to $N$, the fronts are added to the new population in increasing rank order, as long as they can be fully added.
 
-Except for elitism, NSGA-II tends to preserve the diversity between individuals. 
-Therefore, the individuals of the remaining front $\mathcal{F}_{\mu+1}$ to be added to the new population are determined according to their diversity. 
+An additional benefit of NSGA-II is the perservation of the diversity between individuals. 
+Therefore, the inidividuals that are added to the new population from the last remaining front are determined according to their diversity. 
 For finding the most "scattered" solutions, the crowding-sort method is used. 
 The density of the solutions surrounding a particular point in the population is estimated by crowding distance. 
-In the case of a two-objective problem, this value refers to the average distance of the two points on either side of the particular point along each of the objectives, as shown in figure 
+In the case of a two-objective problem, this value refers to the average distance of the two points on either side of the particular point along each of the objectives, as shown in Fig. 
 \ref{crowding_dist}. 
 
 \begin{figure}[ht]
@@ -320,11 +327,11 @@ Crowding tournament selection is based on the individual's rank (the number of t
 According to the crowding tournament selection, solution $i$ is the tournament winner if any of the following conditions are fulfilled:
 \begin{enumerate}
 	\item solution $i$ has a better rank than solution $j$: $r_i < r_j$,
-	\item solution $i$ has an equal rank as solution $j$, but has a larger crowding distance: $r_i=r_j, d_i > d_j$.
+	\item solution $i$ has an equal rank as solution $j$, but has a larger crowding distance, i.e. $r_i=r_j, d_i > d_j$.
 \end{enumerate}
 
 \begin{algorithm}
-\caption{The NSGA-II algorithm.\label{nsga-ii}}
+\caption{NSGA-II algorithm.\label{nsga-ii}}
 \begin{algorithmic}[1]
 \State combine the current parent population $P_t$ and offspring population $Q_t$ into population $R_t$, $R_t = P_t \cup Q_t$
 \State perform non-dominated sorting of the population $R_t$, which creates $\rho$ fronts: 
@@ -351,21 +358,21 @@ Since cooperative coevolution is of interest in this work, this model will be de
 
 In cooperative coevolution, two or more genetically isolated species cooperate in solving a target problem. 
 Genetic isolation is enforced by evolving the species in separate populations. 
-The species exchange information only at fitness evaluations. 
+The species exchange information only when the individuals are evaluated. 
 Target problem statement is decomposed into components and each subproblem is assigned to a species. 
 The fitness of each member is evaluated by forming collaborations with individuals from other species. 
 
 An application of cooperative coevolution is optimization of functions with multiple variables. 
-Each variable is considered as a component of the solution vector and corresponds to an individual population. 
+Each variable is considered as a component of the solution vector and corresponds to a single population. 
 
-The general cooperative coevolutionary algorithm is described by Alg. \ref{coop}.
+The general cooperative coevolutionary algorithm is described with Alg. \ref{coop}.
 
 \begin{algorithm}
-\caption{The cooperative coevolution algorithm.\label{coop}}
+\caption{Cooperative coevolution algorithm.\label{coop}}
 \begin{algorithmic}[1]
 \State set $t=0$
 \ForAll{species $s$}
-\State randomly initialize population $P_s{t}$
+\State randomly initialize population $P_s(t)$
 \EndFor
 \ForAll{species $s$}
 \State evaluate $P_s(t)$ by choosing collaborators from the other species
@@ -394,15 +401,14 @@ For further evaluations, three attributes are considered when selecting collabor
 \end{itemize}
 Collaborator selection pressure refers to the way of selecting collaborators from other populations when evaluating an individual. 
 One can select the best individual according to its previous fitness score, pick a random individual or use classic selection schemes. 
-Collaboration pool size represents the number of collaborators that are selected from each population. 
+Collaboration pool size represents the number of collaborators which are selected from each population. 
 Collaboration credit assignment determines the way of computing the fitness of the current individual. This attribute is considered when the collaboration pool size is higher than 1. 
 There are three possibilities for calculating the fitness value based on multiple collaborators:
 \begin{itemize}
 	\item optimistic: the fitness of the current individual is the value of its best collaboration,
-	\item hedge: the average value of its collaborations is returned as its fitness score,
-	\item pessimistic: the value of its worst collaboration is assigned to the current individual. 
+	\item hedge: the fitness of the current individual is the average value of its collaborations,
+	\item pessimistic: the fitness of the current individual is the value of its worst collaboration. 
 \end{itemize}
 An individual is evaluated by forming a number of collaborations according to the collaboration pool size. The collaborators are selected through a strategy corresponding to the collaboration selection pressure. 
-The fitness value to be returned as the individual's performance is assigned according to collaboration credit assignment. 
-
-% \section{Applications of Genetic Programming}
+The fitness value of an individual is measured as a result of its collaborations.
+A way of assigning the fitness value to an individual based on its collaborations is defined by the collaboration credit assignment.
