@@ -1,7 +1,7 @@
 \chapter{Formal Methods of Scheduling Overloaded Real-Time Systems}
 \label{fm}
 \section{General Approach for Task Scheduling}
-The timing behavior of a real-time system is analyzed by modelling all software activities running in the processor as a set of $n$ real-time tasks: $T = \{\tau_1, \tau_2, ..., \tau_n\}$.
+The timing behavior of a real-time system is analyzed by modelling all software activities executed by the processor as a set of $n$ real-time tasks: $\mathcal{T} = \{\tau_1, \tau_2, ..., \tau_n\}$.
 A task $\tau_i$ is considered as an infinite sequence of instances, or jobs $\tau_{i,j}$.
 A task is periodic if all its jobs are released one after the other with an interval $T_i$ called the task period.
 % Each job has a computation time $c_{i,j}$, a release time $r_{i,j}$ and an absolute deadline $d_{i, j}$\cite{lee2007handbook}.
@@ -15,7 +15,8 @@ The formal definition of a schedule is stated in the following text.
 \begin{mydef}
 A schedule is defined as a function $\sigma : \mathbb{R}^{+} \rightarrow \mathbb{N}$ such that 
 $\forall t \in \mathbb{R}^{+}, \exists \; t_1, t_2$ such that $t \in [\, t_1, t_2 \rangle$ and 
-$\forall \; t' \; \exists \; [\, t_1, t_2 \rangle \; \sigma(t) = \sigma(t')$.
+$\forall \; t' \; \exists \; [\, t_1, t_2 \rangle \; \sigma(t) = \sigma(t')$
+\cite{buttazzo2011hard}.
 \end{mydef}
 In other words, $\sigma(t)$ is an integer step function and $\sigma(t) = k$, with $k > 0$, means that task $\tau_k$ is is executing at time $t$, while $\sigma(t) = 0$ means that the CPU is idle.
 An example of a schedule function is shown in Fig. \ref{schedule_function}.
@@ -30,16 +31,16 @@ A schedule is said to be \textit{feasible} if all tasks can be completed accordi
 A set of tasks is said to be \textit{schedulable} if there exists at least one algorithm that can produce a feasible schedule.
 
 \subsection{Timing Constraints of Real-Time Tasks}
-In this work, the timing constraints of the tasks are of interest, specifically the task deadlines.
+In this thesis, the timing constraints of the tasks are of interest, specifically the task deadlines.
 A deadline represents the time before which a task should complete its execution without causing any damage to the system.
-A deadline specified with respect to the task arrival time is called an \textit{absolute deadline}, whereas a deadline specified with respect to time zero is called a \textit{relative deadline}.
-The timing parameters characterizing a real-time task $\tau_i$ are the following:
+A deadline specified with respect to time zero is called an \textit{absolute deadline}, whereas a deadline specified with respect to the task arrival time is called a \textit{relative deadline}.
+The timing parameters characterizing an istance of a real-time task $\tau_i$ are the following:
 \begin{itemize}
-    \item arrival time $a_i$ - the time at which a task becomes ready for execution,
-    \item computation time $c_i$ - the CPU time necessary for executing the task without interruption,
-    \item absolute deadline $d_i$ - the time before which a task should be completed to avoid damage to the system,
-    \item start time $s_i$ - the time at which a task starts its execution,
-    \item finish time $f_i$ - the time at which a task finishes its execution.
+    \item arrival time $a_i$ - the time at which a task instance arrives,
+    \item computation time $c_i$ - the CPU time necessary for executing the task instance without interruption,
+    \item absolute deadline $d_i$ - the time before which a task instance should be completed to avoid damage to the system,
+    \item start time $s_i$ - the time at which a task instance starts its execution,
+    \item finish time $f_i$ - the time at which a task instance finishes its execution.
 \end{itemize}
 The timing parameters of a task are illustrated in Fig. \ref{task_timing}.
 \begin{figure}[ht]
@@ -80,24 +81,24 @@ Non real-time tasks do not have deadlines. The task value is proportional to the
 For soft real-time tasks, the task value is constant if the task finishes before its deadline, but it decreases with the exceeding time. 
 Thus, a soft deadline is not critical, but missing the deadline causes performance degradation.
 In the case of firm real-time tasks, executing a task after its deadline brings no benefit for the system - the utility function is zero after the deadline. However, missing the deadline does not cause any damage to the system.
-Hard real-time tasks must complete before their deadline. Missing the deadline may cause catastrophic consequences on the system.
+Hard real-time tasks must complete before their deadline. Missing the deadline may cause catastrophic consequences in the system.
 
 \subsection{Classification of Scheduling Algorithms}
 The algorithms for scheduling real-time tasks proposed in literature can be classified with respect to the following criterions \cite{buttazzo2011hard}:
 \begin{itemize}
-    \item support for preemption,
-    \item static / dynamic algorithms,
-    \item offline / online usage,
-    \item optimal / heuristic.
+    \item support for preemption - non-preemtive and preemptive algorithms, 
+    \item static / dynamic schedule generation - static / dynamic algorithms,
+    \item offline / online usage - offline / online algorithms,
+    \item optimality - optimal algorithm / heuristic.
 \end{itemize}
 In preemtive algorithms, the running task can be interrupted at any time to assign the processor to another active task of higher priority.
 On the other hand, in non-preemptive algorithms a task is executed until completion, without being interrupted. 
 All scheduling decisions are taken as the task terminates its execution.
 Static algorithms are those in which scheduling decisions are based on fixed parameters, assigned to tasks before their activation.
 In dynamic algorithms, the task parameters are assigned dynamically during execution.
-A scheduling algorithm is used offline if it is generated before tasks activation. 
-The generated algorithm is stored and executed by a dispatcher.
-Online scheduling algorithms make scheduling decisions every time a new task enters the system or when a running task terminates.
+A scheduling algorithm is used offline if a schedule is generated before task activation. 
+The generated schedule is stored and executed by a dispatcher.
+Online scheduling algorithms typically make scheduling decisions every time a new task enters the system or when a running task terminates.
 An algorithm is said to be optimal if it minimizes some given cost function defined over the task set. 
 When no cost function is defined, an algorithm is optimal if it is able to find a feasible schedule.
 An algorithm is heuristic if it is guided by a heuristic function in taking its scheduling decisions. 
@@ -122,7 +123,7 @@ Preemption usually increases the efficiency of the schedule in a sense that it a
 In standard queueing theory, system load $\rho$ represents the expected number of job arrivals per mean service time. 
 In a system consisting of preemptable periodic tasks with implicit deadlines, system load is equivalent to the processor utilization factor:
 \begin{equation*}
-\rho = U = \sum_{i=1}^{n}\frac{C_i}{T_i},
+\rho = U = \sum_{i=1}^{n}\frac{C_i}{T_i} \, ,
 \end{equation*}
 where $C_i$ is the computation time and $T_i$ is the period of task $\tau_i$.
 If load value is greater than one, the task set is non-schedulable because the total computation demand requested by the periodic tasks exceeds the available processor capacity.
@@ -152,9 +153,9 @@ As shown in \cite{buttazzo2011hard}, it is impossible to create an optimal on-li
 Since aperiodic environment requires using an online scheduler, there is no algorithm that can guarantee a feasible schedule.
 However, there are different online scheduling algorithms proposed in the literature and they can be divided into three main classes:
 \begin{itemize}
-    \item{best effort,}
-    \item{with acceptance test,}
-    \item{robust.}
+    \item{best effort algorithms,}
+    \item{algorithms with acceptance test,}
+    \item{robust algorithms.}
 \end{itemize}
 
 Best effort algorithms always accept new tasks into the ready queue upon arrival. Tasks which will be skipped are determined through proper priority assignment with respect to their value.
@@ -185,7 +186,7 @@ The first solution is not safe because the job could be in a critical section wh
 \cite{buttazzo2011hard}. 
 
 A method for implementing the second solution is called resource reservation.
-Each task is assigned a fraction of the processor bandwidth, just enough to satisfy its timing constraints, while the kernel prevents each task from consuming more than the requested amount \cite{buttazzo2011hard}. 
+Each task is assigned a fraction of the processor bandwidth, just enough to satisfy its timing constraints, while the scheduler prevents each task from consuming more than the requested amount \cite{buttazzo2011hard}. 
 A general approach for implementing this method is to reserve each task an amount of processor time $Q_i$ in every time interval $P_i$. 
 The reservations can be hard or soft: a hard reservation allows the reserved task to execute at most for $Q_i$ units of time every $P_i$, while a soft reservation allows it to execute for more than $Q_i$ units if there is idle time available. 
 In this way, the tasks are effectively reshaped and they can be considered as 
@@ -216,14 +217,14 @@ A task model suitable for job skipping method is known in literature as the firm
 It was first described in \cite{koren1995skip}.
 According to this model, every task is described as following:
 \begin{align*}
-\tau_i(c_i, T_i, d_i, s_i)
+\tau_i(C_i, T_i, S_i)
 \end{align*}
 where $c_i$ is the worst-case computation time, $T_i$ is the task period, $d_i$ is the relative deadline (assumed equal to the period) and $s_i$ is the skip parameter which marks the minimum distance between two consecutive skips, \(2 \leq S_i < \infty\).
 
 An example of schedule with task skipping is given in Fig. \ref{skipover}. 
 Since the utilization factor equals 
 \begin{equation*}
-U_p = \sum_{i=1}^{n} \frac{C_i}{T_i} = 1.17,
+U_p = \sum_{i=1}^{n} \frac{C_i}{T_i} = 1.17 \, ,
 \end{equation*}
 the system is permanently overloaded. 
 However, if task \(\tau_2\) is skipped every three instances, the overload is resolved.
@@ -245,9 +246,9 @@ With respect to the skip parameter $S_i$, each scheduling algorithm needs to ful
 \end{itemize}
 The authors of the model proved that the problem of determining whether a set of periodic skippable tasks is schedulable is NP-hard \cite{koren1995skip}.
 
-For the given set of skippable periodic tasks \( \Gamma = {\tau_i(C_i,T_i,S_i)} \), the necessary schedulability condition is the following:
+For the given set of skippable periodic tasks \( \mathcal{T} = {\tau_1, ... \tau_n} \), the necessary schedulability condition is the following:
 \begin{equation}
-\sum_{i=1}^{n} \frac{C_i(S_i-1)}{T_i S_i} \leq 1.
+\sum_{i=1}^{n} \frac{C_i(S_i-1)}{T_i S_i} \leq 1 \, .
 \end{equation}
 
 A sufficient condition for guaranteeing schedulability of a set of skippable tasks can be stated 
@@ -256,15 +257,21 @@ using the equivalent utilization factor, which is formally described in the foll
 \begin{mydef}
 Given a set \( \Gamma = {\tau_i(C_i,T_i,S_i)} \) of n skippable periodic tasks, the equivalent utilization factor in time interval \([0,L]\) is defined as:
 \begin{equation*}
-U_p^\ast = \max_{L \geq 0} \frac{\sum_{i}D(i, [0,L])}{L}
+U_p^\ast = \max_{L \geq 0} \frac{\sum_{i}D(i, [0,L])}{L} \, ,
 \end{equation*}
 where
 \begin{equation*}
-D(i, [0,L]) = \left\lfloor \frac{L}{T_i} - \frac{L}{T_i \cdot S_i}\right\rfloor \cdot C_i.
+D(i, [0,L]) = \left\lfloor \frac{L}{T_i} - \frac{L}{T_i \cdot S_i}\right\rfloor \cdot C_i \, .
 \end{equation*}
 \end{mydef}
 
 According to the sufficient schedulability condition, a set of skippable periodic tasks is schedulable if \( U_p^\ast \leq 1 \).
+
+In the continutation, the algorithms which implement the skippable method will be described and compared with resprect to the QoS metric.
+QoS represents the ratio of completed tasks with respect to total number of tasks:
+\begin{equation*}
+QoS = \frac{number \; of \; completed \; tasks}{total \; number \; of \; tasks} \, .
+\end{equation*}
 
 \subsubsection{RTO Algorithm}
 The Red Tasks Only (RTO) algorithm decreases system load by always skipping the blue tasks, while red tasks are scheduled according to EDF. 
@@ -274,10 +281,12 @@ The Red Tasks Only (RTO) algorithm decreases system load by always skipping the 
 As all instances of blue tasks are systematically rejected rregardless of their impact on the equivalent utilization factor, RTO schedule has the lowest QoS level for given task set.
 Implementation of RTO algorithm was tested on an example shown in 
 Fig. \ref{rto}.
-Total processor utilization $U_p$ equals 1.19 and the equivalent processor 
-utilization $U_p^\ast$ equals 0.79.
-As the schedule results in seven missed instances, QoS equals 0.53. 
-\\
+Total processor utilization $U_p$ equals
+$\sum_{i=1}^{n}\frac{C_i}{T_i} = \frac{4}{36} + \frac{6}{24} + \frac{9}{18} + \frac{4}{12} = 1.19.$
+Maximum value for the equivalent processor utilization $U_p^\ast$ equals $0.79$ and it is achieved for $L = 24$, where $\sum_{i}D(i, [0, L]) = 19$.
+As the schedule results in seven missed instances, QoS equals
+$\frac{15 - 7}{15} = \frac{8}{15} = 0.53.$
+
 \begin{figure}[ht]
     \centering
     \includegraphics[width=1\textwidth]{images/skipover_RTO.pdf}
@@ -290,7 +299,10 @@ Blue When Possible (BWP) algorithm introduces amendments of RTO algorithm disadv
 As BWP increases the number of task instances that complete successfully, it offers a higher QoS level. 
 Fig. \ref{bwp} depicts the same overload condition as described in Fig. 
 \ref{rto}, but solved by BWP algorithm. 
-Total number of completed task instances is increased because two blue instances completed successfully, thus increasing QoS to 0.67.
+Total number of completed task instances is increased because two blue instances completed successfully, thus increasing QoS to 0.67:
+\begin{equation*}
+QoS = \frac{10}{15} = 0.67 \, .
+\end{equation*}
 \\
 \begin{figure}[ht]
     \centering
@@ -329,10 +341,10 @@ The lengths of idle times starting at instants $k_i$ are stored in the vector $D
 
 % As EDL idle time is determined by the described vectors, EDL schedule itself is not considered in this work because the vectors can be computed with the aid of EDF schedule.
 
-In this work, EDL idle times are computed through corresponding EDF values, according to the expression stated in \cite{chetto1989some}:
-\begin{align}
+In the implementation described in this thesis, EDL idle times are computed through corresponding EDF values, according to the expression stated in \cite{chetto1989some}:
+\begin{align*}
 f_T^{EDL}(H - t) = f_t^{EDF}(t),
-\end{align}
+\end{align*}
 Where $H$ is the hyperperiod and $f_t$ is the availability function:
 \begin{equation*}
 f_T(t) = \begin{cases}
@@ -344,9 +356,9 @@ f_T(t) = \begin{cases}
 Consequently, EDL static deadline vector can be computed from EDF vector by simply reversing the elements.
 
 EDL deadline vector values can be calculated according to the following formula:
-\begin{align}
+\begin{align*}
 k_i^{EDL} = H - k_i^{EDF} - c_i.
-\end{align} 
+\end{align*} 
 
 The idle function for given time instance is updated during the execution of RLP algorithm. 
 Update of EDL algorithm takes into account the current red ready tasks and the current running task, if its current state is red. 
@@ -406,8 +418,10 @@ $\And f\_EDL(current\_time) \neq 0$}
 
 An implementation of the RLP algorithm was tested on the same set of periodic tasks as in the previous sections and the resulting schedule is shown in Fig. 
 \ref{rlp_schedule}.
-Since there are four deadline misses, the QoS is increased to 0.73.
-
+Since there are four deadline misses, the QoS is increased to 0.73:
+\begin{equation*}
+QoS = \frac{15 - 4}{15} = 0.73 \, .
+\end{equation*}
 \begin{figure}[ht]
     \centering
     \includegraphics[width=1\textwidth]{images/skipover_RLP.pdf}
@@ -486,7 +500,7 @@ An eighth degree polynomial regression model for each algorithm is shown by full
 \newpage
 \subsection{Period Adaptation}
 If a periodic task set experiences a permanent overload, one way of reducing the system load is to vary tasks' rates in order to keep the total load under below a desired threshold.
-A method of reducing the system load by enlarging task periods is called period adaptation. 
+A method for reducing the system load by enlarging task periods is called period adaptation. 
 Whenever the system cannot guarantee the acceptance of a new task, instead of rejecting it, the system can try to reduce the utilizations of other tasks by increasing their periods. In that way, the total load is decreased and the new task may be accepted.
 
 A method for changing task periods as a function of the desired workload is the elastic framework. Each task is considered as flexible as a spring, whose utilization can be modified by changing its period within a specified range 
@@ -494,7 +508,7 @@ A method for changing task periods as a function of the desired workload is the 
 
 Each task $\tau_i$ is detoned by:
 \begin{equation*}
-\tau_i(C_i, T_{i_{min}}, T_{i_{max}}, E_i),
+\tau_i(C_i, T_{i_{min}}, T_{i_{max}}, E_i) \, ,
 \end{equation*}
 where $C_i$ is computation time, $T_{i_{min}}$ and $T_{i_{max}}$ are its minimum and maximum period, respectively.
 Minimum period is considered as a nominal period. 
@@ -507,16 +521,16 @@ U_{min} = \sum_{i=1}^{n}\frac{C_i}{T_{max}}.
 
 For example, in a task set scheduled by EDF, the elastic model can be used to adapt the task periods so that the task set becomes schedulable:
 \begin{equation*}
-\sum_{i=1}^{n}\frac{C_i}{T_i} = U_d \leq 1,
+\sum_{i=1}^{n}\frac{C_i}{T_i} = U_d \leq 1 \, ,
 \end{equation*}
 where $U_d$ is the desired utilization factor.
 This is possible as long as the desired utilization value is grater or equal to minimum utilization value.
 
 According to \cite{lee2007handbook}, if there are no constrains on the maximum tesk periods, the utilization of each compressed task can be computed by the following expression:
 \begin{equation*}
-U_i = U_{i_{max}} - ( U_{max} - U_d ) \cdot \frac{E_i}{E_{tot}},
+U_i = U_{i_{max}} - ( U_{max} - U_d ) \cdot \frac{E_i}{E_{tot}} \, ,
 \end{equation*}
-where \( E_{tot} = \sum_{i=1}^{n}E_i \).
+where \( E_{tot} = \sum_{i=1}^{n}E_i \) \, .
 
 The main advantage of this approach is that a new period configuration can be determined online based on the values of elastic coefficients, which are set beforehand based on some design criterion.
 On the other hand, in the presence of period constraints, the compression algorithm becomes iterative with complexity \( O(n^2) \) \cite{lee2007handbook}.

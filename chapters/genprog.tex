@@ -4,6 +4,7 @@
 An optimization problem is the problem of finding the best solution to some problem instance. % from all feasible solutions.
 Depending on the number of objective functions, optimization problems are distinguished in two categories: single-objective and multi-objective optimization problems.
 
+\subsection{Single-objective optimization}
 A single-objective optimization problem in its general form is defined in the following way:
 \begin{align*}
 \label{opt_problem}
@@ -34,6 +35,94 @@ $\delta > 0, |\textbf{x} - \textbf{x}^{*}| \leq \delta$, the condition $f(\textb
 
 If an optimization algorithm deterministically chooses the better solution than the current solution, the solutions generally converge towards the local optimum and the algorithm yields the wrong result.
 A possible solution to this problem is stochastically accepting the solutions that are worse than the current solution.
+
+\subsection{Multi-Objective Optimization}
+A multi-objective optimization problem consists of multiple objective functions which are maximised or minimised. 
+The general form of a multi-objective optimization problem is stated as follows:
+\begin{align*}
+\text{minimize/maximize } & f_m(\textbf{x}),  & m = & 1, 2, ..., M \\
+\text{subject to } & g_j(\textbf{x}) \geq 0, & j = & 1, 2, ..., J \\
+           & h_k(\textbf{x}) = 0, & k = & 1, 2, ..., K \\
+           & x_{i}^{L} \leq x_i \leq x_{i}^{U}, & i = & 1, 2, ..., n. 
+\end{align*}
+
+While optimizing a set of $M$ functions, the problem can be stated in a way that some functions need to be maximized, while the others need to be minimized. 
+Since the minimization problem of a function $f_i$ can be reduced to maximization of the function $-f_i$, the general form can be stated as a problem of maximization or minimization of all $M$ functions.
+
+In multi-objective optimization, the objective functions constitute a multi-dimensional space $Z$, called the objective space. 
+For each solution $\textbf{x}$ in the decision variable space, there exists a point in the objective space, denoted by $f(\textbf{x}) = \textbf{z} = \{z_1, z_2, ... z_M\}$ 
+\cite{deb2001multi}. 
+Since $\textbf{z}$ is a vector, two solutions 
+$\textbf{x}^{(1)}$ and $\textbf{x}^{(2)}$ with corresponding vectors $\textbf{z}^{(1)}$ and $\textbf{z}^{(2)}$ cannot be directly compared. 
+
+In most multi-objective optimization algorithms, comparison between solutions is done with the aid of the domination concept. 
+
+\begin{mydef}
+A solution $\textbf{x}^{(1)}$ is said to dominate the other solution $\textbf{x}^{(2)}$, if both conditions 1 and 2 are true: 
+\begin{enumerate}
+    \item The solution $\textbf{x}^{(1)}$ is no worse than $\textbf{x}^{(2)}$ in all objectives, or $z_j^{(1)} \geq z_j^{(2)}, \forall j \in {1,...,M}$.
+    \item The solution $\textbf{x}^{(1)}$ is strictly better than $\textbf{x}^{(2)}$ in at least one objective, or $\exists j \in {1,...,M}: z_j^{(1)} > z_j^{(2)}$.
+\end{enumerate}
+\end{mydef}
+There are three possibilities that can be the outcome of the dominance check between two solutions:
+\begin{itemize}
+    \item solution 1 dominates solution 2, 
+    \item solution 1 gets dominated by solution 2,
+    \item solutions 1 and 2 do not dominate each other.
+\end{itemize}
+
+In optimization algorithms, dominance is used to determine the quality of the solutions. 
+By performing the dominance check between every pair of solutions, the solution set can be divided into two subsets: the solutions that are not dominated by other solutions and the solutions that get dominated by at least one solution. 
+A set of all feasible solutions that are not dominated by any other solution is called a globally Pareto-optimal set. 
+
+Some multi-objective optimization algortihms require sorting the population in different subsets with respect to their closeness to the non-dominated subset \cite{cupic2013prirodom}. 
+Such subsets are referred to as fronts. 
+
+A method for sorting the population into fronts is called non-dominated sorting. 
+The complexity of the basic approach for non-dominated sorting is $\mathcal{O}(MN^3)$, where $M$ is the number of objective functions and $N$ is the population size.
+An approach for non-dominated sorting used in this work is described with Alg. 
+\ref{nondomsort}. This is a faster and more acceptable method for dominated sorting which requires at most $\mathcal{O}(MN^2)$ computations \cite{deb2001multi}.
+For every solution $i$, a domination count $\mu_i$ is calculated. 
+The domination count is the number of solutions which dominate the solution $i$. 
+The solutions that have $\mu_i = 0$ form a non-dominated set.
+Secondly, for every solution a set $S_i$ is determined. The set $S_i$ consists of the indices of all of the solutions that are dominated by the solution $i$. 
+The solutions with $\mu_i=0$ are set as the first front. 
+The next part of the process is to compute subsequent fronts.
+This is done by finding the dominated solutions in the remaining population for each solution in the last computed front.
+The counters $\mu_i$ for the dominated solutions are reduced. 
+If for any solution the counter $\mu_i$ becomes zero, it means that the solution is not dominated by any solutions in the remaining population and it is added to a new front. 
+
+\newpage
+\begin{algorithm}
+\caption{Non-dominated sorting.\label{nondomsort}}
+\begin{algorithmic}[1]
+\ForAll{$i \in P$}
+\State set $\mu_i = 0$ and $S_i = \emptyset$
+\EndFor
+\ForAll{$j \neq i$ and $j \in P$}
+\If{solution $i$ dominates solution $j$}
+\State $S_i = S_i + j$
+\ElsIf{solution $j$ dominates solution $i$}
+\State increment counter $\mu_i = \mu_i + 1$
+\EndIf
+\If{$\mu_i = 0$} 
+\State keep solution $i$ in the first non-dominated front $P_i$
+\State set front counter $k=1$
+\EndIf
+\EndFor
+\While{$P_k \neq \emptyset$}
+\State initialize $Q = \emptyset$ which keeps the next non-dominated front
+\ForAll{$i \in P_k \And j \in S_i$}
+\State $\mu_j = \mu_j - 1$
+\If{ $\mu_j = 0$} 
+\State add solution $j$ to current front: $Q = Q + j$
+\EndIf
+\EndFor
+\State set $k = k+1$
+\State set $P_k = Q$
+\EndWhile
+\end{algorithmic}
+\end{algorithm}
 
 \section{Genetic Algorithms}
 
@@ -123,10 +212,10 @@ This is achieved by increasing the complexity of the structures undergoing adapt
 A typical data structure used in genetic programming is a tree which represents a hierarchical computer program of dynamically varying size and shape \cite{koza1992genetic}.
 Fig. \ref{genprog:ex1} depicts an example of such data structure which can be represented as a function:
 \begin{equation*}
-2 \cdot (x-5) + \frac{y}{z + 3}.
+f(x, y, z) = 2 \cdot (x-5) + \frac{y}{z + 3} \, .
 \end{equation*}
 
-\begin{algorithm}[H]
+\begin{algorithm}
 \caption{Elitistic variant of the generational genetic algorithm.\label{genalg_g}}
 \begin{algorithmic}[1]
 \State $\text{population} \gets create\_initial\_population()$
@@ -145,7 +234,7 @@ Fig. \ref{genprog:ex1} depicts an example of such data structure which can be re
 \end{algorithmic}
 \end{algorithm}
 
-\begin{figure}[H]
+\begin{figure}
     \centering
     \includegraphics[width=0.7\textwidth]{images/gp_ex1.pdf}
     \caption{An example of a tree structure representing a program.}
@@ -197,94 +286,7 @@ An example of a mutated individual is shown in Fig. \ref{genprog:ex3}.
     \label{genprog:ex3}
 \end{figure}
 
-\newpage
-\section{Multi-Objective Optimization}
-A multi-objective optimization problem consists of multiple objective functions which are maximised or minimised. 
-The general form of a multi-objective optimization problem is stated as follows:
-\begin{align*}
-\text{minimize/maximize } & f_m(\textbf{x}),  & m = & 1, 2, ..., M \\
-\text{subject to } & g_j(\textbf{x}) \geq 0, & j = & 1, 2, ..., J \\
-           & h_k(\textbf{x}) = 0, & k = & 1, 2, ..., K \\
-           & x_{i}^{L} \leq x_i \leq x_{i}^{U}, & i = & 1, 2, ..., n. 
-\end{align*}
-
-While optimizing a set of $M$ functions, the problem can be stated in a way that some functions need to be maximized, while the others need to be minimized. 
-Since the minimization problem of a function $f_i$ can be reduced to maximization of the function $-f_i$, the general form can be stated as a problem of maximization or minimization of all $M$ functions.
-
-In multi-objective optimization, the objective functions constitute a multi-dimensional space $Z$, called the objective space. 
-For each solution $\textbf{x}$ in the decision variable space, there exists a point in the objective space, denoted by $f(\textbf{x}) = \textbf{z} = \{z_1, z_2, ... z_M\}$ 
-\cite{deb2001multi}. 
-Since $\textbf{z}$ is a vector, two solutions 
-$\textbf{x}^{(1)}$ and $\textbf{x}^{(2)}$ with corresponding vectors $\textbf{z}^{(1)}$ and $\textbf{z}^{(2)}$ cannot be directly compared. 
-
-In most multi-objective optimization algorithms, comparison between solutions is done with the aid of the domination concept. 
-
-\begin{mydef}
-A solution $\textbf{x}^{(1)}$ is said to dominate the other solution $\textbf{x}^{(2)}$, if both conditions 1 and 2 are true: 
-\begin{enumerate}
-	\item The solution $\textbf{x}^{(1)}$ is no worse than $\textbf{x}^{(2)}$ in all objectives, or $z_j^{(1)} \geq z_j^{(2)}, \forall j \in {1,...,M}$.
-	\item The solution $\textbf{x}^{(1)}$ is strictly better than $\textbf{x}^{(2)}$ in at least one objective, or $\exists j \in {1,...,M}: z_j^{(1)} > z_j^{(2)}$.
-\end{enumerate}
-\end{mydef}
-There are three possibilities that can be the outcome of the dominance check between two solutions:
-\begin{itemize}
-	\item solution 1 dominates solution 2, 
-	\item solution 1 gets dominated by solution 2,
-	\item solutions 1 and 2 do not dominate each other.
-\end{itemize}
-
-In optimization algorithms, dominance is used to determine the quality of the solutions. 
-By performing the dominance check between every pair of solutions, the solution set can be divided into two subsets: the solutions that are not dominated by other solutions and the solutions that get dominated by at least one solution. 
-A set of all feasible solutions that are not dominated by any other solution is called a globally Pareto-optimal set. 
-
-Some multi-objective optimization algortihms require sorting the population in different subsets with respect to their closeness to the non-dominated subset \cite{cupic2013prirodom}. 
-Such subsets are referred to as fronts. 
-
-A method for sorting the population into fronts is called non-dominated sorting. 
-The complexity of the basic approach for non-dominated sorting is $\mathcal{O}(MN^3)$, where $M$ is the number of objective functions and $N$ is the population size.
-An approach for non-dominated sorting used in this work is described with Alg. 
-\ref{nondomsort}. This is a faster and more acceptable method for dominated sorting which requires at most $\mathcal{O}(MN^2)$ computations \cite{deb2001multi}.
-For every solution $i$, a domination count $\mu_i$ is calculated. 
-The domination count is the number of solutions which dominate the solution $i$. 
-The solutions that have $\mu_i = 0$ form a non-dominated set.
-Secondly, for every solution a set $S_i$ is determined. The set $S_i$ consists of the indices of all of the solutions that are dominated by the solution $i$. 
-The solutions with $\mu_i=0$ are set as the first front. 
-The next part of the process is to compute subsequent fronts.
-This is done by finding the dominated solutions in the remaining population for each solution in the last computed front.
-The counters $\mu_i$ for the dominated solutions are reduced. 
-If for any solution the counter $\mu_i$ becomes zero, it means that the solution is not dominated by any solutions in the remaining population and it is added to a new front. 
-
-\begin{algorithm}
-\caption{Non-dominated sorting.\label{nondomsort}}
-\begin{algorithmic}[1]
-\ForAll{$i \in P$}
-\State set $\mu_i = 0$ and $S_i = \emptyset$
-\EndFor
-\ForAll{$j \neq i$ and $j \in P$}
-\If{solution $i$ dominates solution $j$}
-\State $S_i = S_i + j$
-\ElsIf{solution $j$ dominates solution $i$}
-\State increment counter $\mu_i = \mu_i + 1$
-\EndIf
-\If{$\mu_i = 0$} 
-\State keep solution $i$ in the first non-dominated front $P_i$
-\State set front counter $k=1$
-\EndIf
-\EndFor
-\While{$P_k \neq \emptyset$}
-\State initialize $Q = \emptyset$ which keeps the next non-dominated front
-\ForAll{$i \in P_k \And j \in S_i$}
-\State $\mu_j = \mu_j - 1$
-\If{ $\mu_j = 0$} 
-\State add solution $j$ to current front: $Q = Q + j$
-\EndIf
-\EndFor
-\State set $k = k+1$
-\State set $P_k = Q$
-\EndWhile
-\end{algorithmic}
-\end{algorithm}
-
+\section{Multi-objective Optimization using Genetic Algorithms}
 Genetic algorithm based on the concept of non-dominated sorting is the Non-Dominated Sorting Genetic Algorithm (NSGA). 
 In the evaluation of the solutions, each individual is assigned a scalar value which represents its fitness. 
 The individuals that belong to a front closer to the non-dominated set are assigned a greater fitness value. Additionally, the individuals of the same front with clustered objective values are assigned a diminished fitness value. 

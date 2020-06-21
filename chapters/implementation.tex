@@ -1,10 +1,7 @@
 \chapter{Implementation Overview}
 \label{implementation}
-The organization of source code including the framework for genetic programming and evaluation interfaces is described with the following table.
-\begin{table}[H]
-\begin{tabular}{|
->{\columncolor[HTML]{FFFFFF}}l |
->{\columncolor[HTML]{FFFFFF}}l |}
+The organization of source code including the framework for genetic programming and evaluation interfaces is described with the Table \ref{code_org}.
+\begin{longtable}{| p{.30\textwidth} | p{.70\textwidth} |}
 \hline
 \texttt{TreeCrossover.h}    & implementation of crossover operator for tree genotypes \\ \hline
 \texttt{TreeMutation.h}  & implementation of mutation operator for tree genotypes \\ \hline
@@ -27,45 +24,48 @@ The organization of source code including the framework for genetic programming 
 \texttt{TreePopulation.h} & interface for creating the population \\ \hline
 \texttt{GeneticAlgorithm.h} & interface for heuristic evolution (single-objective) \\ \hline
 \texttt{NSGA.h} & interface for heuristic evolution (multi-objective) \\ \hline
-\texttt{GPEvaluateHeuristic.h} & interface for heuristic evaluation \\ \hline
+\texttt{GPEvaluateHeuristic.h} & interface for heuristic evaluation (single-objective) \\ \hline
+\texttt{GPEvaluateNSGA.h} & interface for heuristic evaluation (multi-objective) \\ \hline
 \texttt{Simulator.h} & implementation of periodic tasks simulator \\ \hline
 \texttt{Scheduler.h} & scheduler implementation \\ \hline
 \texttt{Task.h} & a class describing periodic tasks \\ \hline
 \texttt{UunifastCreator.h} & interface for generating tasks by \textit{UUniFast} algorithm \\ \hline
-\end{tabular}
-\end{table}
+\caption{Organization of source code which implements the framework for genetic programming and the interfaces for evaluation.}
+\label{code_org}
+\end{longtable}
 
 \section{Generating Test Task Sets}
-For testing the performance of the considered algorithms and heuristics, it is needed to generate a large amount of syntetic test tasks.
-The simulation results should not be biased by the task generation method, so selecting the approach to random generation of the task set requires special attention.
-An important factor in generating syntetic task sets is the probability density function of the random variables used to generate the task set parameters \cite{bini2005measuring}.
+For testing the performance of the considered algorithms and heuristics, it is necessary to generate a large amount of synthetic test tasks.
+The simulation results should not be biased by the task generation method.
+Therefore, selecting the approach to random generation of the task set requires special attention.
+An important factor in generating synthetic task sets is the probability density function of the random variables used to generate the task set parameters \cite{bini2005measuring}.
 
 The first step to generating the task set parameters is generating the task periods.
-Treating the task periods as random variables does not reflect the characteristics of real applications, since task periods are defined by the user and enforced by the operating system \cite{bini2005measuring}.
+Treating the task periods as random variables does not reflect the characteristics of real applications, since task periods are defined by an user and enforced by the operating system \cite{bini2005measuring}.
 However, for testing the scheduling heuristics without any a priori knowledge about their future applications and the characteristics of the corresponding environment, assuming task periods as random variables with an uniform distribution is acceptable.
 
 After selecting the task periods, it is required to generate task computation times, according to a given distribution.
-The computation time $c_i$ is assumed to have a uniform distribution scaled by a factor $T_i$:
+The computation time $C_i$ is assumed to have a uniform distribution scaled by a factor $T_i$:
 \begin{equation*}
-c_i \sim \mathcal{U}[0, T_i].
+C_i \sim \mathcal{U}[0, T_i] \, .
 \end{equation*}
-This is equivalent to assuming each task utilization $u_i$ to have a uniform distribution in the interval $[0, 1]$.
+This is equivalent to assuming that each task utilization is chosen from interval $[0, 1]$ with the uniform distribution.
 
 For testing purposes, it is often desireable to generate the task utilization values in a way that they correspond to the given total processor utilization value.
 The stated feature is accomplished by generating the individual utilization $u_i$ with an uniform distribution in the interval $[0, \overline{U}]$, subject to the constraint:
 \begin{equation*}
-\sum_{i=1}^{N}u_i = \overline{U}.
+\sum_{i=1}^{N}u_i = \overline{U} \, .
 \end{equation*}
 The utilization disparity in a task set can be expressed by a parameter called \textit{U-difference}:
 \begin{equation*}
-\delta = \frac{max_i\{u_i\}-min_i\{u_i\}}{\sum_{i=1}^{n}u_i}.
+\delta = \frac{max_i\{u_i\}-min_i\{u_i\}}{\sum_{i=1}^{n}u_i} \, .
 \end{equation*}
 If $\delta = 0$, all utilization factors are the same, whereas $\delta=1$ denotes the maximum degree of difference \cite{bini2005measuring}.
 
-To efficiently generate utilization factors for the task set with given utilization factor $\overline{u}$, where $\delta \rightarrow 1$, the \textit{Uunifast} algorithm is used.
+To efficiently generate utilization factors for the task set with given utilization factor $\overline{u}$, where $\delta \rightarrow 1$, the UUniFast algorithm is used.
 
 \subsection{UUniFast Algorithm}
-The UUniFast algorithm is built on the consideration that the probability density function of the sum of independent random variables is given by the convolution of their probability dension functions \cite{bini2005measuring}.
+The UUniFast algorithm is built on the consideration that the probability density function of the sum of independent random variables is given by the convolution of their probability density functions \cite{bini2005measuring}.
 In every algorithm iteration, a value which represents a sum of $n-1$ variables is randomly generated.
 A single utilization factor $u_i$ is set equal to the difference between $\overline{u}$ and the generated value.
 This is repeated for each task and the complexity of the algorithm is $O(n)$.
@@ -83,7 +83,7 @@ The algorithm inputs are the number of variables \texttt{n} and mean utilization
 \State vec\_u[n] = sum\_u
 \end{algorithmic}
 \end{algorithm}
-Figure \ref{uunifast:fig} illustrates the values of 10000 utilization tuples generated by the UUniFast algorithm.
+Fig. \ref{uunifast:fig} illustrates the values of 10000 utilization tuples generated by the UUniFast algorithm.
 The value of \texttt{n} is set to 3, while the mean utilization factor $\overline{u}$ is set to 1.
 The density of the generated values is uniform in the interval $[0, 1]$.
 \begin{figure}[ht]
@@ -112,8 +112,9 @@ This class contains two variable members: the fitness value of the individual an
 The priority functions evolved by genetic programming are represented in the form of a tree.
 The tree genotypes correspond to arithmetic expressions used to calculate the priority of each job.
 As described in the second chapter, a tree genotype consists of function and terminal nodes.
-The terminal nodes used for assembling a priority function are listed in the following table.
-\begin{table}[]
+The terminal nodes used for assembling a priority function are listed in Table \ref{terminals}.
+The values of the variables in terminal node set depend not only on the parameters of the current job that is being dispatched, but also on the parameters of remaining (unscheduled) jobs.
+\begin{table}[H]
 \centering
 \begin{tabular}{|
 >{\columncolor[HTML]{EFEFEF}}c |
@@ -128,10 +129,11 @@ Nr                     & number of remaining (unscheduled) jobs                 
 SPr                    & sum of computation times of all remaining jobs                    \\ \hline
 SD                     & sum of due dates of all jobs                                     \\ \hline
 \end{tabular}
+\caption{A list of terminal nodes used for assembling a priority function.}
+\label{terminals}
 \end{table}
-The values of the variables in terminal node set depend not only on the parameters of the current job that is being dispatched, but also on the parameters of remaining (unscheduled) jobs.
 
-The following table contains a list of the function nodes.
+Table \ref{function} contains a list of the function nodes.
 \begin{table}[H]
 \centering
 \label{tbl:functions}
@@ -143,6 +145,8 @@ The following table contains a list of the function nodes.
 ADD, SUB, MUL, DIV     & Addition, subtraction, multiplication and protected division \\ \hline
 POS                    & $POS(a) = max\{a, 0\}$                                         \\ \hline
 \end{tabular}
+\caption{A list of function nodes used for assembling a priority function.}
+\label{function}
 \end{table}
 Protected division node is a modified division operator which checks whether the second argument (denominator) is zero before performing division.
 If the second argument is zero, it returns the value 1, regardless of the value of the first argument.
@@ -162,7 +166,7 @@ If root is a function node, the root's children nodes are set to random function
 The procedure is the same for every node until the required depth is reached.
 The nodes at final depth are set to random terminal nodes.
 On the other hand, the \textit{grow} method selects any node (function or terminal) in each step.
-Both approaches are implemented as methods of the \texttt{TreeConstructor} class and their prototypes are stated in Code listing \ref{treeconstr}.
+Both approaches are implemented as methods of the \texttt{TreeConstructor} class and their prototypes are stated in Listing \ref{treeconstr}.
 \begin{lstlisting}[frame=none, label={treeconstr}, caption={Functions for implementing the \textit{full} and \textit{grow} methods for creating a genotype.}, captionpos=b]
 void construct_tree_full( int max_depth, AbstractNode *&root );
 void construct_tree_grow( int max_depth, AbstractNode *&root );
@@ -170,7 +174,7 @@ void construct_tree_grow( int max_depth, AbstractNode *&root );
 The \texttt{max\_depth} argument determines the maximum depth of the tree.
 Actual depth has a random value in the interval $[1, \texttt{max\_depth}]$.
 The trees are constructed using the BFS (breadth-first search) algorithm.
-Figure \ref{fullgrow} depicts the difference between the trees generated by \textit{full} and \textit{grow} methods.
+Fig. \ref{fullgrow} depicts the difference between the trees generated by \textit{full} and \textit{grow} methods.
 \begin{figure}[ht]
     \centering
     \includegraphics[width=1\textwidth]{images/fullgrow.pdf}
@@ -180,7 +184,7 @@ Figure \ref{fullgrow} depicts the difference between the trees generated by \tex
 
 \subsection{Operators}
 Selection, crossover and mutation operators are implemented in the \\\texttt{SelectionOperator}, \texttt{CrossoverOperator} and \texttt{MutationOperator} class, respectively.
-Selection is performed by the \texttt{get\_members} method whose prototype is stated in Code listing \ref{selection}.
+Selection is performed by the \texttt{get\_members} method whose prototype is stated in Listing \ref{selection}.
 \begin{lstlisting}[frame=none, label={selection}, caption={Prototype of the \texttt{get\_members} method which performs selection.}, captionpos=b]
 template <typename T>
 void TreeSelection<T>::get_members( std::vector<T> &population, 
@@ -188,7 +192,7 @@ void TreeSelection<T>::get_members( std::vector<T> &population,
 \end{lstlisting}
 The selected individuals are stored in the \texttt{members} vector.
 
-Crossover operator is implemented by the \texttt{get\_children} method whose prototype is stated in Code listing \ref{crossover}.
+Crossover operator is implemented by the \texttt{get\_children} method whose prototype is stated in Listing \ref{crossover}.
 \begin{lstlisting}[frame=none, label={crossover}, caption={Prototype of the \texttt{get\_children} method which performs crossover.}, captionpos=b]
 template <typename T>
 void TreeCrossover<T>::get_children( std::vector<T> &parents, 
@@ -200,7 +204,7 @@ The child genotypes are generated by swapping the randomly selected subtrees.
 If this operation would cause the tree depth to exceed the maximum tree depth, crossover is not performed.
 
 Mutation of a genotype is done through the \texttt{mutate\_solution} method.
-Prototype of this method is stated in Code listing \ref{mutation}.
+Prototype of this method is stated in Listing \ref{mutation}.
 \begin{lstlisting}[frame=none, label={mutation}, caption={Prototype of the \texttt{mutate\_solution} method.}, captionpos=b]
 template <typename T>
 void TreeMutation<T>::mutate_solution ( T &solution );
@@ -216,16 +220,16 @@ Evaluation of all the individuals in the population is performed in each generat
 In this work, the fitness function corresponds to the mean skip factor of all tasks.
 To achieve a schedule with a maximum number of consecutive completed tasks (with minumum number of skipped tasks), the fitness function must be maximized.
 
-A method in charge of evaluating an individual and returning its fitness value is the \texttt{get\_value} method, implemented in the \texttt{GPEvaluateHeuristic} class.
+A method for evaluating an individual and returning its fitness value is the \texttt{get\_value} method, implemented in the \texttt{GPEvaluateHeuristic} class.
 This method generates an arbitrary number of training task sets and sets the individual's genotype as the priority function.
 The individual is evaluated by running a simulation of training tasks execution and scheduling the tasks according to the individual's genotype.
-Simulation time is set equal to the hyperperiod corresponding to the training task set.
+Simulation time is equal to the hyperperiod corresponding to the training task set.
 The number of skipped instances is tracked for each task.
 The fitness value is computed by calculating the mean skip factor of each task and scaling it by the total number of tasks.
 
 \subsection{Periodic Tasks Simulator}
-In this work, the tasks are represented as objects of class \texttt{Task}.
-The following parameters are set through the constructor:
+In this thesis, the tasks are represented as objects of class \texttt{Task}.
+The following parameters are initialized through the constructor:
 \begin{itemize}
 	\item task period,
 	\item duration,
@@ -262,7 +266,7 @@ The object and vectors are stored in the \texttt{task\_ctx} structure and passed
 The computed priority is stored in the \texttt{priority} member variable of the \texttt{Task} object.
 
 The scheduler is invoked at every time instance when the \texttt{ready} list is not empty and it assigns the highest priority task to the \texttt{running} variable.
-Function which performs dispatching is implemented in a separate class and its complete source code is shown in Code listing \ref{sched1}.
+The function that performs dispatching is implemented in a separate class and its complete source code is shown in Listing \ref{sched1}.
 \begin{lstlisting}[frame=none, label={sched1}, caption={The \texttt{schedule\_next} method.}, captionpos=b]
 void Scheduler::schedule_next( std::vector<Task *> &ready, 
 	Task *&running )
@@ -355,12 +359,12 @@ On the other hand, by skipping tasks with longer periods, the execution of tasks
 A schedule with unevenly distributed skip factors is not acceptable.
 To generate schedules where task skip factors are evenly distributed, a second optimization criterion must be included.
 
-The second criterion punishes the heuristics that generated schedules with large deviation between skip factors of the tasks.
+The second criterion degrades the fitness values of the heuristics that generated schedules with large deviation between skip factors of the tasks.
 The goal is to minimize the deviation between the task skip factors.
 As a measure of the deviation between the skip factors, the Gini coefficient is used\footnote{The Gini coefficient is used for measuring the inequality among values of a frequency distribution. A Gini coefficient of zero expresses that all values are the same, whereas a Gini coefficient of one expresses maximal inequality \cite{gini1912variabilita}.}.
 For a set of $n$ tasks with skip factors $s_i$, the Gini coefficient is computed by the following expression:
 \begin{equation*}
-G = \frac{\sum_{i=1}^{n}\sum_{j=1}^{n}|s_i - s_j|}{2n^2\overline{s}}.
+G = \frac{\sum_{i=1}^{n}\sum_{j=1}^{n}|s_i - s_j|}{2n^2\overline{s}} \, .
 \end{equation*}
 
 Optimization of the two objectives is implemented according to the NSGA-II algorithm.
@@ -405,6 +409,19 @@ Otherwise, the task is automatically skipped.
 Its skip factor is reset and the task is placed in the \texttt{pending} vector.
 The priority computation by the other genotype is performed upon the accepted tasks.
 
+The performance of the coevolution approach is illustrated with Fig. \ref{coev_single_sep}.
+Coevolution with separate heuristics for priority function and acceptance test is compared to an implementation where a single heuristic is used both as the priority function and the acceptance test.
+The two approaches are compared with respect to QoS metric and wasted CPU time.
+Wasted CPU time for every task set is scaled by the hyperperiod of the task set.
+The benefit of using separate heuristics is manifested by the decreased value of the wasted CPU time.
+Although the single heuristic approach achieved greater QoS in underload conditions, its performance is significantly degraded for utilization factors greater than $1$.
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/coev_single_sep_qos.pdf}
+    \caption{Performance of cooperative coevolution compared to single heuristic approach.}
+    \label{coev_single_sep}
+\end{figure}
+
 \section{Integrating Evolved Scheduling Heuristics into FreeRTOS}
 \subsection{FreeRTOS Task Management}
 FreeRTOS is an open-source real-time operating system designed for embedded systems. 
@@ -420,7 +437,7 @@ When a task is added to a list, it is represented by a pointer to a \verb$ListIt
 The TCB structure contains two \verb$ListItem$ objects: \verb$xStateListItem$ and \verb$xGenericListItem$.
 
 A task in FreeRTOS can exist in one of the following states: deleted, suspended, ready, blocked and running. 
-Figure \ref{freertos:state} shows a state diagram for FreeRTOS tasks. 
+Fig. \ref{freertos:state} shows a state diagram for FreeRTOS tasks. 
 
 \begin{figure}[ht]
     \centering
@@ -448,7 +465,7 @@ In that way, the task is prepared for its first context switch \cite{goyette2007
 
 After all the required tasks have been created, the FreeRTOS scheduler is started by a call to the 
 \verb$vTaskStartScheduler()$ function. 
-First, the Idle task with the lowest priority is created.
+First, the \textit{idle} task with the lowest priority is created.
 The global timer \verb$xTickCount$ is set to zero. 
 The \verb$vTaskStartScheduler()$ function then passes control to the \verb$xTaskStartScheduler()$ in the Hardware Abstraction Layer (HAL), which configures the timer interrupt needed for invoking the scheduler. 
 The HAL scheduler is also in charge of restoring the context of the currently selected task
@@ -460,7 +477,7 @@ The ready list is implemented as an array of task lists:
 static List_t pxReadyTasksLists[configMAX_PRIORITIES];
 \end{lstlisting}
 The elements of the \verb$pxReadyTasksLists$ array are lists of tasks that have the same priority, from \verb$0$ to \verb$configMAX_PRIORITIES-1$.
-An example of a ready list is shown in figure \ref{freertos:ready}.
+An example of a ready list is shown in Fig. \ref{freertos:ready}.
 There are three priority levels in the list: task A has priority 0, no tasks have priority 1 and tasks B, C and D have priority 2. 
 
 \begin{figure}[ht]
@@ -503,7 +520,7 @@ This is possible by modifying the existing FreeRTOS functions and data structure
 
 The general idea of implementing a dynamic scheduler is to create a new ready list which contains tasks ordered by a custom parameter defined in \verb$xTaskStateItem$ object.
 In this case, \verb$xTaskStateItem$ shall contain the task priority computed by the evaluated heuristic and the list will be sorted in increasing priority value. 
-The priority of the Idle task is set to some arbitrary value, significantly greater than the other tasks' priorities. 
+The priority of the \textit{idle} task is set to some arbitrary value, significantly greater than the other tasks' priorities. 
 
 To determine whether dynamic scheduling based on the evolved heuristic is used, a configuration variable \verb$configUSE_GP_SCHEDULER$ is added to the \verb$FreeRTOSConfig.h$ file. 
 
@@ -557,15 +574,15 @@ Next, the new ready tasks list must be declared.
 #endif /* configUSE_GP_SCHEDULER */
 \end{lstlisting}
 Before adding a task to the ready list, its priority value is computed. 
-Since the Idle task is added to the ready list in the same way as other tasks, it has to be distinguished in some manner. 
-While creating the Idle task, its duration is set to 0.
+Since the \textit{idle} task is added to the ready list in the same way as other tasks, it has to be distinguished in some manner. 
+While creating the \textit{idle} task, its duration is set to 0.
 Therefore, before assigning a priority value to a task, its duration value is checked. 
-An example of the priority computation according to an arbitrary heuristic is given in Code listing \ref{priority_comp}. 
+An example of the priority computation according to an arbitrary heuristic is given in Listing \ref{priority_comp}. 
 In this example, priority is computed according to the expression:
 \begin{align*}
-p_i = d_i + c_i + max\{ d_i - c_i - current\_time, 0 \}.
+p_i = d_i + c_i + max\{ d_i - c_i - current\_time, 0 \} \, .
 \end{align*}
-The Idle task priority is set to 1000.
+The \textit{idle} task priority is set to 1000.
 \begin{lstlisting}[frame=none, label={priority_comp}, caption={Macro function for priority computation.}, captionpos=b]
 #define vTaskComputePriority( pxTCB )
 {
@@ -608,8 +625,8 @@ Therefore, a modification in the \verb$prvAddNewTaskToReadyList()$ function is r
 	vListInitialise( &(xReadyTasksListGP) );
 #endif /* configUSE_GP_SCHEDULER */
 \end{lstlisting}
-The \verb$vTaskStartScheduler()$ is also modified in order to manage the creation of the Idle task.
-\begin{lstlisting}[frame=none, label={idle}, caption={Creation of the Idle task.}, captionpos=b]
+The \verb$vTaskStartScheduler()$ is also modified in order to manage the creation of the \textit{idle} task.
+\begin{lstlisting}[frame=none, label={idle}, caption={Creation of the \textit{idle} task.}, captionpos=b]
 #if( configUSE_GP_SCHEDULER == 1 )
 {
 	xReturn = xTaskPeriodicCreate( prvIdleTask,
