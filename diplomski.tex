@@ -3,6 +3,8 @@
 \usepackage{longtable}
 \usepackage{enumitem}
 \usepackage{algorithm}
+\usepackage{subcaption}
+\usepackage[export]{adjustbox}
 \usepackage[noend]{algpseudocode}
 \algnewcommand\And{\textbf{and}}
 \algnewcommand\To{\textbf{to}}
@@ -63,15 +65,15 @@
 \bibliographystyle{fer}
 
 \begin{abstract}
-This thesis presents the possibilities of using machine learning for scheduling tasks in overloaded real-time systems.
-The existing formal algorithms for scheduling in overloaded real-time systems are investigated, as well as the methods for reducing system load in transient and permanent overload conditions.
-A framework for evolving scheduling heuristics using genetic programming is implemented.
-Support for multi-objective optimization and cooperative coevolution is integrated in the framework.
+This thesis presents the possibilities of using machine learning for task scheduling in overloaded real-time systems.
+The existing formal algorithms for scheduling in overloaded real-time systems were investigated, as well as the methods for reducing system load in transient and permanent overload conditions.
+A framework for evolving scheduling heuristics using genetic programming was implemented, with support for multi-objective optimization (NSGA-II algorithm) and cooperative coevolution.
 The performance of the evolved heuristics is measured by a simulator of periodic tasks execution with preemptive scheduling.
-The interface for generating task sets for training and testing is implemented using the \textit{UUniFast} algorithm.
-The results of testing the considered technique are compared to the results of the \textit{Red Tasks as Late as Possible} (RLP) algorithm with respect to Quality of Service (QoS) measure.
+The interface for generating task sets for training and testing is implemented using the UUniFast algorithm.
+The results of testing the considered technique are compared to the results of the \textit{Red Tasks as Late as Possible} (RLP) algorithm with respect to Quality of Service (QoS) metric.
+Applying the evolved heuristic to a large number of synthetically generated task sets increased the QoS achieved in overload conditions up to 50\% in comparison with RLP approach.
 An existing framework for evolutionary computation is applied to the task scheduling problem in order to validate the results achieved by the implemented framework.
-The FreeRTOS operating system is modified to use evolved heuristics for task scheduling and the results are evaluated on sythetically generated task sets.
+The FreeRTOS operating system was modified to use the evolved heuristics for task scheduling.
 
 \keywords{genetic programming, task scheduling, real-time systems.}
 \end{abstract}
@@ -83,13 +85,14 @@ The FreeRTOS operating system is modified to use evolved heuristics for task sch
 U ovom radu prikazane su mogućnosti primjene strojnog učenja za raspoređivanje zadataka u preopterećenim sustavima za rad u stvarnom vremenu.
 Istraženi su postojeći formalni algoritmi za raspoređivanje u preopterećenim sustavima za rad u stvarnom vremenu, kao i metode za smanjenje opterećenja u tranzijentnim i permanentnim uvjetima preopterećenja.
 Implementiran je radni okvir za evoluciju heuristika za raspoređivanje koristeći genetsko programiranje.
-U implementirani radni okvir integrirana je potpora za višekriterijsku optimizaciju i kooperativnu koevoluciju.
+U implementirani radni okvir integrirana je potpora za višekriterijsku optimizaciju (NSGA-II algoritam) i kooperativnu koevoluciju.
 Rezultati evoluiranih heuristika analizirani su pomoću simulatora izvođenja periodičkih zadataka koji koristi raspoređivanje s istiskivanjem.
-Sučelje za generiranje setova zadataka za učenje i testiranje implementirano je koristeći \textit{UUniFast} algoritam.
+Sučelje za generiranje setova zadataka za učenje i testiranje implementirano je koristeći UUniFast algoritam.
 Rezultati testiranja predstavljene tehnike uspoređeni su s rezultatima algoritma \textit{Red Tasks as Late as Possible} (RLP) s obzirom na postignutu kvalitetu usluge.
+Primjenom evoluirane heuristike na veliki broj sintetski generiranih setova zadataka,
+kvaliteta usluge u uvjetima preopterećenja povećana je do 50\% u odnosu na RLP algoritam.
 Rezultati implementiranog radnog okvira verificirani su usporedbom s rezultatima postojećeg radnog okvira za evolucijsko računanje.
 Napravljena je modifikacija operacijskog sustava FreeRTOS za korištenje evoluiranih heuristika za raspoređivanje zadataka.
-Rezultati su evaluirani na sintetski generiranim skupovima zadataka.
 
 \kljucnerijeci{genetsko programiranje, raspoređivanje zadataka, sustavi za rad u stvarnom vremenu.}
 \end{sazetak}

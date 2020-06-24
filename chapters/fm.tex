@@ -3,8 +3,9 @@
 \section{General Approach for Task Scheduling}
 The timing behavior of a real-time system is analyzed by modelling all software activities executed by the processor as a set of $n$ real-time tasks: $\mathcal{T} = \{\tau_1, \tau_2, ..., \tau_n\}$.
 A task $\tau_i$ is considered as an infinite sequence of instances, or jobs $\tau_{i,j}$.
-A task is periodic if all its jobs are released one after the other with an interval $T_i$ called the task period.
-% Each job has a computation time $c_{i,j}$, a release time $r_{i,j}$ and an absolute deadline $d_{i, j}$\cite{lee2007handbook}.
+All jobs of the same task $\tau_{i,j}$ are assumed to have the same worst-case computation time $C_i$ and the same relative deadline $D_i$, which is the time interval within which the job should complete its execution \cite{lee2007handbook}.
+A task is periodic if all its jobs are released one after the other with an interval $T_i$, called the task period. 
+ % Each job has a computation time $c_{i,j}$, a release time $r_{i,j}$ and an absolute deadline $d_{i, j}$\cite{lee2007handbook}.
 % For simplicity, all jobs of the same task are assumed to have the same computation time and relative deadline, which will be denoted in the following text as $c_i$ and $d_i$, respectively.
 
 The operation of allocating the CPU to a selected task is referred to as \textit{dispatching}.
@@ -89,7 +90,7 @@ The algorithms for scheduling real-time tasks proposed in literature can be clas
     \item support for preemption - non-preemtive and preemptive algorithms, 
     \item static / dynamic schedule generation - static / dynamic algorithms,
     \item offline / online usage - offline / online algorithms,
-    \item optimality - optimal algorithm / heuristic.
+    \item optimality - optimal algorithms / heuristics.
 \end{itemize}
 In preemtive algorithms, the running task can be interrupted at any time to assign the processor to another active task of higher priority.
 On the other hand, in non-preemptive algorithms a task is executed until completion, without being interrupted. 
@@ -217,7 +218,7 @@ A task model suitable for job skipping method is known in literature as the firm
 It was first described in \cite{koren1995skip}.
 According to this model, every task is described as following:
 \begin{align*}
-\tau_i(C_i, T_i, S_i)
+\tau_i = (C_i, T_i, S_i)
 \end{align*}
 where $c_i$ is the worst-case computation time, $T_i$ is the task period, $d_i$ is the relative deadline (assumed equal to the period) and $s_i$ is the skip parameter which marks the minimum distance between two consecutive skips, \(2 \leq S_i < \infty\).
 
@@ -299,7 +300,7 @@ Blue When Possible (BWP) algorithm introduces amendments of RTO algorithm disadv
 As BWP increases the number of task instances that complete successfully, it offers a higher QoS level. 
 Fig. \ref{bwp} depicts the same overload condition as described in Fig. 
 \ref{rto}, but solved by BWP algorithm. 
-Total number of completed task instances is increased because two blue instances completed successfully, thus increasing QoS to 0.67:
+Total number of completed task instances is increased because two blue instances completed successfully, thus increasing QoS:
 \begin{equation*}
 QoS = \frac{10}{15} = 0.67 \, .
 \end{equation*}
@@ -418,7 +419,7 @@ $\And f\_EDL(current\_time) \neq 0$}
 
 An implementation of the RLP algorithm was tested on the same set of periodic tasks as in the previous sections and the resulting schedule is shown in Fig. 
 \ref{rlp_schedule}.
-Since there are four deadline misses, the QoS is increased to 0.73:
+Since there are four deadline misses, the QoS is increased:
 \begin{equation*}
 QoS = \frac{15 - 4}{15} = 0.73 \, .
 \end{equation*}
@@ -428,12 +429,10 @@ QoS = \frac{15 - 4}{15} = 0.73 \, .
     \caption{An example of a schedule produced by RLP algorithm with skipping factor $s_i=2$.}
     \label{rlp_schedule}
 \end{figure}
-
 A comparison of QoS value depending on the utilization value for the described algorithms is shown in Fig. \ref{fm_comparison}.
 The scattered plot shows the results of testing each algorithm on $1500$ different task sets with utilization factors from the interval $[0.90, 1.60]$.
 An eighth degree polynomial regression model for each algorithm is shown by full line.
-
-\begin{figure}[ht]
+\begin{figure}
     \centering
     \includegraphics[width=1\textwidth]{images/qos_comp_polyfit.pdf}
     \caption{Comparison of QoS value for RTO, BWP and RLP algorithm.}
@@ -496,8 +495,6 @@ An eighth degree polynomial regression model for each algorithm is shown by full
 % \EndIf
 % \end{algorithmic}
 % \end{algorithm}
-
-\newpage
 \subsection{Period Adaptation}
 If a periodic task set experiences a permanent overload, one way of reducing the system load is to vary tasks' rates in order to keep the total load under below a desired threshold.
 A method for reducing the system load by enlarging task periods is called period adaptation. 
@@ -508,7 +505,7 @@ A method for changing task periods as a function of the desired workload is the 
 
 Each task $\tau_i$ is detoned by:
 \begin{equation*}
-\tau_i(C_i, T_{i_{min}}, T_{i_{max}}, E_i) \, ,
+\tau_i = (C_i, T_{i_{min}}, T_{i_{max}}, E_i) \, ,
 \end{equation*}
 where $C_i$ is computation time, $T_{i_{min}}$ and $T_{i_{max}}$ are its minimum and maximum period, respectively.
 Minimum period is considered as a nominal period. 
